@@ -1,5 +1,11 @@
 # Nouveautés
 
+## 4.1.4
+
+**Corrigé**
+- Les fichiers téléchargés pour une mise à jour sont supprimés dans la minute qui suit, même quand le message
+  « installé » a déjà été lu.
+
 ## 4.1.3
 
 **Corrigé**

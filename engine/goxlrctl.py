@@ -69,7 +69,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.1.3"
+VERSION = "4.1.4"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -2199,8 +2199,10 @@ class Updater:
             return True
         if self.phase:
             return False
-        if os.path.exists(os.path.join(work, "plan.json")) and not os.path.exists(os.path.join(work, "result.json")):
-            if time.time() - os.path.getmtime(os.path.join(work, "plan.json")) < 300:
+        plan_path = os.path.join(work, "plan.json")
+        if os.path.exists(plan_path) and not os.path.exists(os.path.join(work, "result.json")):
+            done = (read_manifest(plan_path) or {}).get("version") == VERSION     # on tourne deja sur cette version
+            if not done and time.time() - os.path.getmtime(plan_path) < 300:
                 return False                # installation peut-etre en cours
         if IS_WINDOWS:
             subprocess.run(["schtasks", "/delete", "/tn", UPDATE_TASK, "/f"], capture_output=True)

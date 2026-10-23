@@ -195,6 +195,20 @@ class Updates(unittest.TestCase):
             time.sleep(0.05)
         self.assertEqual((self.up.installed or {}).get("version"), "4.1.1")
 
+    def test_nettoyage_apres_avis_lu(self):
+        """L'interface a deja lu et efface result.json : le plan de la version en cours suffit pour nettoyer."""
+        work = os.path.join(g.DATA_DIR, "update")
+        os.makedirs(os.path.join(work, "new"))
+        with open(os.path.join(work, "plan.json"), "w") as f:
+            json.dump({"version": g.VERSION}, f)
+        self.assertTrue(self.up.cleanup_after_install())
+        self.assertEqual(os.listdir(work), [])
+        os.makedirs(os.path.join(work, "new"))
+        with open(os.path.join(work, "plan.json"), "w") as f:
+            json.dump({"version": "9.9.9"}, f)          # installation d'une autre version peut-etre en cours
+        self.assertFalse(self.up.cleanup_after_install())
+        self.assertEqual(sorted(os.listdir(work)), ["new", "plan.json"])
+
     def test_a_jour(self):
         self.gh.publish("4.1.0", make_zip("4.1.0"))
         self.up.check()
