@@ -69,7 +69,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.1.1"
+VERSION = "4.1.2"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -1801,6 +1801,7 @@ UPDATE_DOWNLOAD_PREFIX = os.environ.get("GOXLR_UPDATE_PREFIX") or f"https://gith
 UPDATE_ASSET = "GoXLR-Mini.zip"
 UPDATE_HASH_ASSET = "GoXLR-Mini.sha256"
 UPDATE_TASK = "GoXLR Mini Update"
+UPDATE_APPLY_TIMEOUT = 90                  # une installation qui demarre arrete le moteur en quelques secondes
 DOWNLOAD_HOSTS = {"github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com",
                   "github-releases.githubusercontent.com"} | set(filter(None, (os.environ.get("GOXLR_UPDATE_HOSTS") or "").split(",")))
 UPDATE_FIRST_CHECK, UPDATE_EVERY, UPDATE_OFFLINE_RETRY = 5, 6 * 3600, 30 * 60
@@ -1919,6 +1920,7 @@ class Updater:
         self.installed = None                # resultat de la derniere installation (lu au demarrage)
         self.wake = threading.Event()
         self.launch_apply = self._launch_apply
+        self.apply_timeout = UPDATE_APPLY_TIMEOUT
         self._load_result()
 
     # -- etat --
@@ -2091,6 +2093,7 @@ class Updater:
                 json.dump(plan, f, indent=2, ensure_ascii=False)
             log(f"Mise à jour {VERSION} → {man['version']} prête : remplacement des fichiers")
             self.launch_apply(new, work)
+            self._watch_apply()
         except UpdateCancelled:
             self._set(phase=None, progress=None, error=None)
             log("Mise à jour annulée")
@@ -2156,6 +2159,19 @@ class Updater:
         run = subprocess.run(["schtasks", "/run", "/tn", UPDATE_TASK], capture_output=True, text=True)
         if run.returncode != 0:
             raise UpdateError("launch", "Impossible de lancer l’installation (tâche planifiée).")
+
+    def _watch_apply(self):
+        """L'installation arrete ce moteur des son debut. S'il tourne encore apres le delai, elle a echoue avant
+        l'echange des fichiers (rien n'a ete touche) : on le dit au lieu de rester sur « installation en cours »."""
+        deadline = time.time() + self.apply_timeout
+        while time.time() < deadline:
+            time.sleep(0.2)
+            if self.phase != "applying":
+                return
+        if IS_WINDOWS:
+            subprocess.run(["schtasks", "/delete", "/tn", UPDATE_TASK, "/f"], capture_output=True)
+        raise UpdateError("launch", "L’installation n’a pas démarré, rien n’a été modifié. Réessaie ; "
+                                    "si ça recommence, installe depuis la page de la release.")
 
     # -- apres une installation --
     def _load_result(self):
@@ -2343,18 +2359,25 @@ def apply_update(plan, stop=None, start=None, wait=None):
     return result
 
 
-def run_apply_update():
+def run_apply_update(base_dir=None):
     """Point d'entree de la tache « GoXLR Mini Update » : lit le plan prepare par le moteur."""
     global LOG_PREFIX
     LOG_PREFIX = "[mise à jour] "
-    work = os.path.dirname(os.path.dirname(BASE_DIR))       # <donnees>/update/new/goxlrctl.py -> <donnees>/update
+    work = os.path.dirname(base_dir or BASE_DIR)            # BASE_DIR = <donnees>/update/new -> <donnees>/update
     plan = read_manifest(os.path.join(work, "plan.json"))
     if not plan:
-        raise SystemExit("plan.json introuvable")
+        configure(data_dir=os.path.dirname(work))
+        log(f"Installation impossible : plan.json introuvable dans {work}")
+        raise SystemExit(1)
     configure(data_dir=plan["data_dir"])
     log(f"Installation de {plan['version']} (depuis {plan['from_version']})")
-    r = apply_update(plan)
+    try:
+        r = apply_update(plan)
+    except Exception as e:
+        log(f"Échec avant l’échange des fichiers : {describe(e)}")
+        raise
     log(("Version " + plan["version"] + " installée") if r.get("ok") else ("Échec, retour à " + plan["from_version"] + " : " + r.get("error", "")))
+    return r
 
 # ---------------- serveur HTTP ----------------
 ACTIONS = {"volume", "mute", "fader", "route", "colour", "mic", "raw", "profile", "dsp", "mic-preset",

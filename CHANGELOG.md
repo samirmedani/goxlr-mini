@@ -1,5 +1,15 @@
 # Nouveautés
 
+## 4.1.2
+
+**Corrigé**
+- La mise à jour intégrée restait sur « Installation en cours » sans rien installer : la tâche d'installation
+  cherchait ses instructions au mauvais endroit. Elle installe maintenant la nouvelle version.
+- Si l'installation ne démarre pas, GoXLR Mini le dit au bout de 90 secondes (rien n'est modifié) et propose
+  de réessayer, au lieu d'attendre sans fin.
+- Resté bloqué sur « Installation en cours » en 4.1.0 ou 4.1.1 ? Redémarre Windows une fois, puis lance la
+  mise à jour : la 4.1.2 s'installe normalement.
+
 ## 4.1.1
 
 **Corrigé**

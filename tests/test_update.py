@@ -153,6 +153,18 @@ class Updates(unittest.TestCase):
         self.assertEqual((plan["version"], plan["from_version"]), ("4.1.1", "4.1.0"))
         self.assertTrue(os.path.isfile(os.path.join(new, "app", "GoXLR Mini.exe")))
 
+    def test_installation_qui_ne_demarre_pas(self):
+        """Si la tache d'installation ne demarre pas, le moteur tourne toujours : echec affiche, on peut reessayer."""
+        self.up.apply_timeout = 0.3
+        self.gh.publish("4.1.1", make_zip("4.1.1"))
+        self.up.check()
+        self.up.start_install()
+        self.wait_phase("failed")
+        self.assertEqual(self.up.error["code"], "launch")
+        self.up.start_install()
+        self.wait_phase("applying")
+        self.assertEqual(len(self.applied), 2)
+
     def test_a_jour(self):
         self.gh.publish("4.1.0", make_zip("4.1.0"))
         self.up.check()
@@ -275,6 +287,21 @@ class Apply(unittest.TestCase):
         self.assertEqual(open(os.path.join(self.dst, "goxlrctl.py")).read(), "ancien")
         self.assertEqual(open(os.path.join(self.dst, "app", "GoXLR Mini.exe")).read(), "ancien")
         self.assertEqual(self.calls, ["stop", "start", "stop", "start"])
+
+    def test_point_d_entree_trouve_le_plan(self):
+        """La tache lance <donnees>/update/new/goxlrctl.py apply-update ; le plan est dans <donnees>/update."""
+        work = os.path.join(self.data, "update")
+        os.makedirs(os.path.join(work, "new"))
+        json.dump(self.plan, open(os.path.join(work, "plan.json"), "w"))
+        seen = []
+        saved = (g.apply_update, g.LOG_PREFIX, g.DATA_DIR)
+        g.apply_update = lambda plan: seen.append(plan) or {"ok": True}
+        try:
+            g.run_apply_update(base_dir=os.path.join(work, "new"))
+        finally:
+            g.apply_update, g.LOG_PREFIX = saved[:2]
+            g.configure(data_dir=saved[2])
+        self.assertEqual([p["version"] for p in seen], ["4.1.1"])
 
 
 if __name__ == "__main__":
