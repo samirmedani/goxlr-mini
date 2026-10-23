@@ -31,8 +31,7 @@ jobs:
         shell: pwsh
         run: ./scripts/build-release.ps1
       - name: Notes de version
-        shell: pwsh
-        run: python scripts/release_notes.py "${{ github.ref_name }}" | Out-File -Encoding utf8 dist/notes.md
+        run: python scripts/release_notes.py "${{ github.ref_name }}" --out dist/notes.md
       - name: Release GitHub
         shell: pwsh
         env:

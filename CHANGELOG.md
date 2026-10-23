@@ -1,5 +1,10 @@
 # Nouveautés
 
+## 4.1.1
+
+**Corrigé**
+- Les notes de version gardent leurs accents dans la fenêtre de mise à jour et sur GitHub.
+
 ## 4.1.0
 
 Première version publique.
