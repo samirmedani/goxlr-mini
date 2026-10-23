@@ -1,5 +1,14 @@
 # Nouveautés
 
+## 4.1.3
+
+**Corrigé**
+- Après une mise à jour, l'appli se relance d'elle-même sur la nouvelle version. Elle lisait la version de son
+  exe dans la mémoire du programme déjà ouvert et croyait n'avoir rien de nouveau. Les applis 4.1.0 à 4.1.2 encore
+  ouvertes sont fermées puis rouvertes par l'installation.
+- Le message « GoXLR Mini … est installé » s'affiche bien après la mise à jour.
+- Les fichiers de la mise à jour (environ 200 Mo) sont supprimés dans la minute, et non plus 6 heures plus tard.
+
 ## 4.1.2
 
 **Corrigé**

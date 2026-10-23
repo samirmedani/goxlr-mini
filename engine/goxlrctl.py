@@ -69,7 +69,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.1.2"
+VERSION = "4.1.3"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -1921,6 +1921,7 @@ class Updater:
         self.wake = threading.Event()
         self.launch_apply = self._launch_apply
         self.apply_timeout = UPDATE_APPLY_TIMEOUT
+        self.started = time.time()
         self._load_result()
 
     # -- etat --
@@ -2178,7 +2179,9 @@ class Updater:
         p = os.path.join(DATA_DIR, "update", "result.json")
         r = read_manifest(p)
         if r and time.time() - float(r.get("t") or 0) < 3600:
-            self.installed = r
+            self._set(installed=r)
+            return True
+        return False
 
     def ack_installed(self):
         with self.lock:
@@ -2189,18 +2192,22 @@ class Updater:
             pass
 
     def cleanup_after_install(self):
-        """Au demarrage : la tache d'installation et la copie preparee ne servent plus."""
+        """Au demarrage : la tache d'installation et la copie preparee ne servent plus.
+        Renvoie False si une installation semble encore en cours (a retenter plus tard)."""
         work = os.path.join(DATA_DIR, "update")
-        if not os.path.isdir(work) or self.phase:
-            return
+        if not os.path.isdir(work):
+            return True
+        if self.phase:
+            return False
         if os.path.exists(os.path.join(work, "plan.json")) and not os.path.exists(os.path.join(work, "result.json")):
             if time.time() - os.path.getmtime(os.path.join(work, "plan.json")) < 300:
-                return                      # installation peut-etre en cours
+                return False                # installation peut-etre en cours
         if IS_WINDOWS:
             subprocess.run(["schtasks", "/delete", "/tn", UPDATE_TASK, "/f"], capture_output=True)
         for name in ("new", UPDATE_ASSET, "plan.json"):
             p = os.path.join(work, name)
             shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else (os.path.exists(p) and os.remove(p))
+        return True
 
     def loop(self):
         cleaned = False
@@ -2208,9 +2215,10 @@ class Updater:
             self.wake.wait(5)
             self.wake.clear()
             try:
-                if not cleaned and time.time() > self.next_at - UPDATE_FIRST_CHECK + 30:
-                    cleaned = True
-                    self.cleanup_after_install()
+                if not cleaned and time.time() > self.started + 30:
+                    cleaned = self.cleanup_after_install()
+                if self.installed is None and time.time() - self.started < 180:
+                    self._load_result()     # la tache d'installation ecrit son resultat apres le demarrage du moteur
                 if time.time() >= self.next_at and not self.phase:
                     self.check()
             except Exception as e:
@@ -2285,6 +2293,67 @@ def _win_start_engine(plan):
     subprocess.run(["schtasks", "/run", "/tn", plan["task"]], capture_output=True)
 
 
+def _powershell(script, timeout=60):
+    """Lance un script PowerShell sans fenetre (encode en base64 : aucun souci de guillemets) ; sortie en UTF-8."""
+    import base64
+    full = "$ProgressPreference = 'SilentlyContinue'; [Console]::OutputEncoding = [Text.Encoding]::UTF8; " + script
+    r = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                        "-EncodedCommand", base64.b64encode(full.encode("utf-16-le")).decode("ascii")],
+                       capture_output=True, timeout=timeout, creationflags=0x08000000)
+    return r.stdout.decode("utf-8", "replace")
+
+
+def _ps_quote(s):
+    return "'" + str(s).replace("'", "''") + "'"
+
+
+def _win_list_apps(plan):
+    """Appli GoXLR Mini ouverte depuis le dossier installe : [(pid, "DOMAINE\\compte")]."""
+    if not IS_WINDOWS:
+        return []
+    out = _powershell("Get-CimInstance Win32_Process -Filter \"Name='GoXLR Mini.exe'\" | ForEach-Object { "
+                      "$o = Invoke-CimMethod -InputObject $_ -MethodName GetOwner; "
+                      "'{0}|{1}\\{2}|{3}' -f $_.ProcessId, $o.Domain, $o.User, $_.ExecutablePath }")
+    prefix = os.path.normcase(os.path.join(plan["to"], "app")) + os.sep
+    apps = []
+    for line in out.splitlines():
+        parts = line.strip().split("|", 2)
+        if len(parts) == 3 and parts[0].isdigit() and os.path.normcase(parts[2]).startswith(prefix) and parts[1] != "\\":
+            apps.append((int(parts[0]), parts[1]))
+    return apps
+
+
+def _win_pid_alive(pid):
+    out = subprocess.run(["tasklist", "/fi", f"PID eq {pid}", "/fo", "csv", "/nh"], capture_output=True, text=True).stdout
+    return f'"{pid}"' in out
+
+
+def _win_restart_apps(plan, before, grace=12):
+    """Les applis 4.1.3+ se relancent seules quand le moteur annonce la nouvelle version. Celles d'avant (ou une
+    relance ratee) restent sur l'ancien exe : on les ferme et on rouvre la nouvelle dans la session de leur compte."""
+    if not before:
+        return []
+    deadline = time.time() + grace
+    stuck = [(pid, user) for pid, user in before]
+    while stuck and time.time() < deadline:
+        time.sleep(1)
+        stuck = [(pid, user) for pid, user in stuck if _win_pid_alive(pid)]
+    exe = os.path.join(plan["to"], "app", "GoXLR Mini.exe")
+    users = []
+    for pid, user in stuck:
+        subprocess.run(["taskkill", "/f", "/pid", str(pid)], capture_output=True)
+        if user not in users:
+            users.append(user)
+    for user in users:
+        _powershell("$t = 'GoXLR Mini (relance)'; "
+                    f"$a = New-ScheduledTaskAction -Execute {_ps_quote(exe)}; "
+                    f"$p = New-ScheduledTaskPrincipal -UserId {_ps_quote(user)} -LogonType Interactive -RunLevel Limited; "
+                    "Register-ScheduledTask -TaskName $t -Action $a -Principal $p -Force | Out-Null; "
+                    "Start-ScheduledTask -TaskName $t; Start-Sleep 3; Unregister-ScheduledTask -TaskName $t -Confirm:$false")
+        log(f"Appli relancée pour {user}")
+    return users
+
+
 def _wait_health(plan, timeout=45):
     t0 = time.time()
     url = f"http://127.0.0.1:{plan.get('port', 14565)}/api/health"
@@ -2299,12 +2368,14 @@ def _wait_health(plan, timeout=45):
     return False
 
 
-def apply_update(plan, stop=None, start=None, wait=None):
+def apply_update(plan, stop=None, start=None, wait=None, list_apps=None, restart_apps=None):
     """Sauvegarde les fichiers en place, copie la nouvelle version, verifie qu'elle repond ; sinon retour arriere.
     Les fichiers sont deplaces par renommage (permis meme pour un exe ouvert) dans backup/<date>-<version>."""
     stop = stop or _win_stop_engine
     start = start or _win_start_engine
     wait = wait or _wait_health
+    list_apps = list_apps or _win_list_apps
+    restart_apps = restart_apps or _win_restart_apps
     src, dst = plan["from"], plan["to"]
     new_files = sorted((read_manifest(os.path.join(src, "manifest.json")) or {}).get("files") or {})
     old_files = sorted((read_manifest(os.path.join(dst, "manifest.json")) or {}).get("files") or {})
@@ -2313,6 +2384,11 @@ def apply_update(plan, stop=None, start=None, wait=None):
     backup = os.path.join(dst, "backup", time.strftime("%Y%m%d-%H%M%S") + "-" + plan["from_version"])
     moved, copied = [], []
     result = {"version": plan["version"], "from_version": plan["from_version"], "t": time.time()}
+    try:
+        apps = list_apps(plan)
+    except Exception as e:
+        apps = []
+        log(f"Applis ouvertes introuvables : {describe(e)}")
     stop(plan)
     try:
         for rel in sorted(set(old_files) | set(new_files)):
@@ -2353,6 +2429,11 @@ def apply_update(plan, stop=None, start=None, wait=None):
                 winreg.SetValueEx(k, "DisplayVersion", 0, winreg.REG_SZ, plan["version"])
         except OSError:
             pass
+    if result.get("ok"):
+        try:
+            restart_apps(plan, apps)
+        except Exception as e:
+            log(f"Relance de l’appli : {describe(e)}")
     os.makedirs(os.path.join(plan["data_dir"], "update"), exist_ok=True)
     with open(os.path.join(plan["data_dir"], "update", "result.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False)

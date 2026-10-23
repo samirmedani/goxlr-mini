@@ -165,6 +165,36 @@ class Updates(unittest.TestCase):
         self.wait_phase("applying")
         self.assertEqual(len(self.applied), 2)
 
+    def test_nettoyage_au_demarrage_apres_installation(self):
+        """Au demarrage qui suit une installation, la copie preparee part dans la minute (pas 6 h plus tard)."""
+        work = os.path.join(g.DATA_DIR, "update")
+        os.makedirs(os.path.join(work, "new", "python"))
+        for n in (g.UPDATE_ASSET, "plan.json", "result.json"):
+            open(os.path.join(work, n), "w").write("{}")
+        self.up.started = time.time() - 31
+        self.up.next_at = time.time() + 6 * 3600          # premiere recherche deja faite
+        threading.Thread(target=self.up.loop, daemon=True).start()
+        self.up.wake.set()
+        t0 = time.time()
+        while time.time() - t0 < 3 and os.listdir(work) != ["result.json"]:
+            time.sleep(0.05)
+        self.assertEqual(os.listdir(work), ["result.json"])
+
+    def test_resultat_ecrit_apres_le_demarrage(self):
+        """La tache d'installation ecrit result.json une fois le nouveau moteur en ligne : l'avis « installé » suit."""
+        self.assertIsNone(self.up.installed)
+        self.up.next_at = time.time() + 6 * 3600
+        threading.Thread(target=self.up.loop, daemon=True).start()
+        work = os.path.join(g.DATA_DIR, "update")
+        os.makedirs(work, exist_ok=True)
+        json.dump({"version": "4.1.1", "from_version": "4.1.0", "t": time.time(), "ok": True},
+                  open(os.path.join(work, "result.json"), "w"))
+        self.up.wake.set()
+        t0 = time.time()
+        while time.time() - t0 < 3 and self.up.installed is None:
+            time.sleep(0.05)
+        self.assertEqual((self.up.installed or {}).get("version"), "4.1.1")
+
     def test_a_jour(self):
         self.gh.publish("4.1.0", make_zip("4.1.0"))
         self.up.check()
@@ -268,7 +298,9 @@ class Apply(unittest.TestCase):
 
     def run_apply(self, healthy):
         return g.apply_update(self.plan, stop=lambda p: self.calls.append("stop"),
-                              start=lambda p: self.calls.append("start"), wait=lambda p: healthy)
+                              start=lambda p: self.calls.append("start"), wait=lambda p: healthy,
+                              list_apps=lambda p: [(42, "PC\\joueur")],
+                              restart_apps=lambda p, apps: self.calls.append(("apps", apps)))
 
     def test_succes(self):
         r = self.run_apply(True)
@@ -279,14 +311,14 @@ class Apply(unittest.TestCase):
         self.assertEqual(len(backups), 1)
         self.assertEqual(open(os.path.join(self.dst, "backup", backups[0], "goxlrctl.py")).read(), "ancien")
         self.assertEqual(json.load(open(os.path.join(self.data, "update", "result.json")))["version"], "4.1.1")
-        self.assertEqual(self.calls, ["stop", "start"])
+        self.assertEqual(self.calls, ["stop", "start", ("apps", [(42, "PC\\joueur")])])
 
     def test_retour_arriere(self):
         r = self.run_apply(False)
         self.assertFalse(r["ok"])
         self.assertEqual(open(os.path.join(self.dst, "goxlrctl.py")).read(), "ancien")
         self.assertEqual(open(os.path.join(self.dst, "app", "GoXLR Mini.exe")).read(), "ancien")
-        self.assertEqual(self.calls, ["stop", "start", "stop", "start"])
+        self.assertEqual(self.calls, ["stop", "start", "stop", "start"])     # l'ancienne appli reste ouverte
 
     def test_point_d_entree_trouve_le_plan(self):
         """La tache lance <donnees>/update/new/goxlrctl.py apply-update ; le plan est dans <donnees>/update."""

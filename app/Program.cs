@@ -36,7 +36,9 @@ static class Program
         }
         if (!first)
         {
-            try { using var ev = EventWaitHandle.OpenExisting(capture ? CaptureEvent : ShowEvent); ev.Set(); } catch { }
+            // relance ratee (l'ancienne instance n'a pas rendu le verrou) : on s'efface sans rouvrir sa fenetre
+            if (!args.Contains("--relaunch"))
+                try { using var ev = EventWaitHandle.OpenExisting(capture ? CaptureEvent : ShowEvent); ev.Set(); } catch { }
             return;
         }
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
@@ -270,6 +272,8 @@ sealed class MainForm : Form
 
     /// Apres une mise a jour, le moteur annonce la nouvelle version et le fichier de l'appli a deja ete remplace
     /// (l'ancien a ete deplace dans backup) : on relance le nouvel exe dans le meme etat (fenetre ou icone seule).
+    /// La version installee se lit dans manifest.json : FileVersionInfo sur notre propre exe renvoie la version
+    /// de l'image deja chargee en memoire, pas celle du nouveau fichier.
     bool relaunching;
     void RelaunchIfUpdated(string? engineVersion)
     {
@@ -277,8 +281,8 @@ sealed class MainForm : Form
         if (ev <= Program.AppVersion) return;
         var exe = Environment.ProcessPath;
         if (exe == null || !File.Exists(exe)) return;
-        var fv = FileVersionInfo.GetVersionInfo(exe);
-        if (!Version.TryParse($"{fv.FileMajorPart}.{fv.FileMinorPart}.{fv.FileBuildPart}", out var onDisk) || onDisk <= Program.AppVersion) return;
+        var onDisk = InstalledVersion(exe);
+        if (onDisk == null || onDisk <= Program.AppVersion) return;
         relaunching = true;
         try
         {
@@ -286,6 +290,18 @@ sealed class MainForm : Form
             Quit();
         }
         catch { relaunching = false; }
+    }
+
+    static Version? InstalledVersion(string exe)
+    {
+        try
+        {
+            var root = Path.GetDirectoryName(Path.GetDirectoryName(exe));
+            if (root == null) return null;
+            using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "manifest.json")));
+            return Version.TryParse(doc.RootElement.GetProperty("version").GetString(), out var v) ? v : null;
+        }
+        catch { return null; }
     }
 
     void ShowOsd(string mic)
