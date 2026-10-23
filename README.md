@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/captures/mixer.png" width="880" alt="Mixeur de GoXLR Mini : quatre faders, musique coupée du stream seulement">
+  <img src="docs/captures/mixer.jpg" width="880" alt="Mixeur de GoXLR Mini : quatre faders, musique coupée du stream seulement">
 </p>
 
 *Open-source controller for the TC-Helicon GoXLR Mini on Windows, using only the official driver: mixer, mic
@@ -34,16 +34,16 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/captures/mic.png" alt="Page Micro"></td>
-<td width="50%"><img src="docs/captures/routing.png" alt="Page Routage"></td>
+<td width="50%"><img src="docs/captures/mic.jpg" alt="Page Micro"></td>
+<td width="50%"><img src="docs/captures/routing.jpg" alt="Page Routage"></td>
 </tr>
 <tr>
 <td><b>Micro</b> : détection du micro, gain automatique, six préréglages de voix, égaliseur, noise gate, compresseur, de-esser. Bouton micro en bascule, <i>maintenir pour couper</i> ou <i>appuyer pour parler</i>.</td>
 <td><b>Routage</b> : qui entend quoi (toi, ton stream, Discord, la VOD, les enceintes). <b>VOD sans musique</b> : la VOD reçoit le stream sans la musique, anti-DMCA.</td>
 </tr>
 <tr>
-<td><img src="docs/captures/scenes.png" alt="Page Scènes"></td>
-<td><img src="docs/captures/light.png" alt="Page Éclairage"></td>
+<td><img src="docs/captures/scenes.jpg" alt="Page Scènes"></td>
+<td><img src="docs/captures/light.jpg" alt="Page Éclairage"></td>
 </tr>
 <tr>
 <td><b>Scènes</b> : Streaming, Gaming, Soirée Discord, Podcast… en un clic, et <b>scènes automatiques</b> : « OBS s'ouvre → Streaming », « Spotify → Écoute ».</td>
@@ -61,28 +61,36 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 - **Diagnostic** en direct : état de la connexion, commandes, reconnexions, journal ; bouton « Reconnecter ».
 
 <p align="center">
-  <img src="docs/captures/overlay.png" width="380" alt="Incrustation OBS : micro coupé">
+  <img src="docs/captures/overlay.jpg" width="380" alt="Incrustation OBS : micro coupé">
 </p>
 
 ## Installer
 
 1. Installe le **pilote officiel GoXLR** de TC-Helicon (il fournit les voies audio System, Game, Chat, Music…).
 2. Ferme **GoXLR Utility** s'il est installé : deux logiciels ne peuvent pas piloter la GoXLR en même temps.
-3. Télécharge **[GoXLR-Mini.zip](https://github.com/samirmedani/goxlr-mini/releases/latest/download/GoXLR-Mini.zip)**,
-   décompresse-le, puis double-clique **`Installer.cmd`** (Windows demande les droits administrateur).
+3. Télécharge **[GoXLR-Mini-Setup.exe](https://github.com/samirmedani/goxlr-mini/releases/latest/download/GoXLR-Mini-Setup.exe)**
+   et ouvre-le : un clic sur **Installer**, Windows demande l'autorisation, c'est prêt.
+
+<p align="center">
+  <img src="docs/captures/setup.png" width="560" alt="Installeur de GoXLR Mini">
+</p>
 
 C'est tout : le moteur démarre avec Windows, l'appli se lance avec ta session et l'icône apparaît en bas à droite.
 Tes réglages vivent dans `C:\ProgramData\GoXLR Mini` et survivent aux mises à jour. Pour désinstaller :
-`Desinstaller.cmd`, ou *Paramètres › Applications*.
+*Paramètres › Applications › GoXLR Mini*.
 
-> L'exécutable n'est pas signé : Windows SmartScreen peut afficher « Windows a protégé votre ordinateur ».
-> Choisis *Informations complémentaires › Exécuter quand même*, ou vérifie d'abord l'empreinte publiée avec la
-> release (`GoXLR-Mini.sha256`).
+Tu préfères sans installeur ? **[GoXLR-Mini.zip](https://github.com/samirmedani/goxlr-mini/releases/latest/download/GoXLR-Mini.zip)**
+contient les mêmes fichiers : décompresse-le, puis double-clique `Installer.cmd` (et `Desinstaller.cmd` pour
+retirer). Pour un déploiement sans fenêtre : `GoXLR-Mini-Setup.exe /quiet` (options `/nodesktop`, `/nostartup`).
+
+> Les exécutables ne sont pas signés : Windows SmartScreen peut afficher « Windows a protégé votre ordinateur ».
+> Choisis *Informations complémentaires › Exécuter quand même*, ou vérifie d'abord l'empreinte SHA-256 affichée par
+> GitHub à côté de chaque fichier de la release (aussi dans `GoXLR-Mini.sha256`).
 
 ## Mises à jour
 
 <p align="center">
-  <img src="docs/captures/update.png" width="720" alt="Fenêtre de mise à jour">
+  <img src="docs/captures/update.jpg" width="720" alt="Fenêtre de mise à jour">
 </p>
 
 GoXLR Mini regarde s'il existe une nouvelle version 5 secondes après le démarrage, puis toutes les 6 heures. Une
@@ -127,7 +135,8 @@ python3 engine/goxlrctl.py daemon --child --simulate --port 14566     # puis htt
 
 Le diagnostic propose alors des boutons pour appuyer sur les touches, débrancher, rebrancher ou bloquer l'USB.
 Une release se publie en poussant un tag `vX.Y.Z` : GitHub fabrique `GoXLR-Mini.zip` (Python embarqué officiel,
-appli autonome) et la publie avec ses notes tirées de [CHANGELOG.md](CHANGELOG.md). Voir
+appli autonome) et `GoXLR-Mini-Setup.exe` (le même paquet dans un installeur), puis les publie avec leurs notes
+tirées de [CHANGELOG.md](CHANGELOG.md). Voir
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Compatibilité

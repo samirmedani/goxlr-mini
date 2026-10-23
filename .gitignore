@@ -26,6 +26,8 @@ coverage/
 # build .NET
 app/bin/
 app/obj/
+setup/bin/
+setup/obj/
 
 # build outils
 tools/*/bin/

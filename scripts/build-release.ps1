@@ -1,5 +1,5 @@
 ﻿<#
-Fabrique la release de GoXLR Mini : dist\GoXLR-Mini.zip et dist\GoXLR-Mini.sha256.
+Fabrique la release de GoXLR Mini : dist\GoXLR-Mini-Setup.exe, dist\GoXLR-Mini.zip et dist\GoXLR-Mini.sha256.
 A lancer sous Windows avec le SDK .NET 10 (et Git pour graver le commit). Utilise par la release GitHub.
 Contenu : Python embarque officiel (empreinte verifiee), appli .NET autonome (aucun runtime a installer),
 moteur, interface, installeur, licences, manifest.json (version, commit, empreinte de chaque fichier).
@@ -16,6 +16,8 @@ $utf8 = New-Object Text.UTF8Encoding $false
 $version = (Select-String -Path (Join-Path $root 'engine\goxlrctl.py') -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
 $appVersion = ([xml](Get-Content (Join-Path $root 'app\GoXLRMini.csproj'))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 if ($appVersion -ne $version) { throw "Versions differentes : moteur $version, appli $appVersion" }
+$setupVersion = ([xml](Get-Content (Join-Path $root 'setup\GoXLRMiniSetup.csproj'))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+if ($setupVersion -ne $version) { throw "Versions differentes : moteur $version, installeur $setupVersion" }
 Write-Host "GoXLR Mini $version"
 
 $stage = Join-Path $Out 'payload'
@@ -65,9 +67,23 @@ $man = [ordered]@{ name = 'GoXLR Mini'; version = $version; release = $true; com
 $zip = Join-Path $Out 'GoXLR-Mini.zip'
 if (Test-Path $zip) { Remove-Item $zip -Force }
 $code = 'import os,sys,zipfile; s,z=sys.argv[1],sys.argv[2]; f=zipfile.ZipFile(z,"w",zipfile.ZIP_DEFLATED,compresslevel=9); [f.write(os.path.join(d,n),os.path.relpath(os.path.join(d,n),s).replace(os.sep,"/")) for d,_,ns in os.walk(s) for n in sorted(ns)]; f.close()'
-& (Join-Path $stage 'python\python.exe') -c $code $stage $zip
+$zipPy = Join-Path $Out 'make_zip.py'      # fichier : Windows PowerShell 5.1 abime les guillemets d'un -c
+[IO.File]::WriteAllText($zipPy, $code, $utf8)
+& (Join-Path $stage 'python\python.exe') $zipPy $stage $zip
+Remove-Item $zipPy -Force
 if ($LASTEXITCODE -ne 0) { throw 'Creation de l archive echouee' }
 $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-[IO.File]::WriteAllText((Join-Path $Out 'GoXLR-Mini.sha256'), "$sha  GoXLR-Mini.zip" + [char]10, $utf8)
 $mb = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 Write-Host "dist\GoXLR-Mini.zip : $mb Mo, sha256 $sha, $($files.Count) fichiers"
+
+# installeur en un seul fichier : GoXLR-Mini-Setup.exe embarque l'archive (.NET Framework 4.8, present sur Windows 10 et 11)
+$setupOut = Join-Path $Out 'setup'
+dotnet build (Join-Path $root 'setup\GoXLRMiniSetup.csproj') -c Release "-p:Version=$version" "-p:Payload=$zip" -o $setupOut --nologo
+if ($LASTEXITCODE -ne 0) { throw 'Compilation de l installeur echouee' }
+$exe = Join-Path $Out 'GoXLR-Mini-Setup.exe'
+Copy-Item (Join-Path $setupOut 'GoXLR-Mini-Setup.exe') $exe -Force
+$shaExe = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+# la mise a jour integree lit la premiere ligne (l'archive) : elle doit rester en tete
+[IO.File]::WriteAllText((Join-Path $Out 'GoXLR-Mini.sha256'), "$sha  GoXLR-Mini.zip" + [char]10 + "$shaExe  GoXLR-Mini-Setup.exe" + [char]10, $utf8)
+$mbExe = [math]::Round((Get-Item $exe).Length / 1MB, 1)
+Write-Host "dist\GoXLR-Mini-Setup.exe : $mbExe Mo, sha256 $shaExe"

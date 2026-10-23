@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Installeur Windows : un seul exe qui embarque GoXLR-Mini.zip (fabrique par scripts/build-release.ps1). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AssemblyName>GoXLR-Mini-Setup</AssemblyName>
+    <RootNamespace>GoXLRMiniSetup</RootNamespace>
+    <ApplicationIcon>..\app\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>4.2.0</Version>
+    <Product>GoXLR Mini</Product>
+    <Company>GoXLR Mini contributors</Company>
+    <Description>Installe GoXLR Mini</Description>
+    <Copyright>Licence MIT</Copyright>
+    <DebugType>none</DebugType>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildProjectDirectory)=.</PathMap>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <EmbeddedResource Include="..\app\app.ico" LogicalName="app.ico" />
+    <EmbeddedResource Include="$(Payload)" LogicalName="payload.zip" Condition="'$(Payload)' != ''" />
+  </ItemGroup>
+</Project>

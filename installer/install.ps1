@@ -9,8 +9,11 @@ Usage : double-clic sur Installer.cmd (les droits administrateur sont demandes).
 Options : -NoStartup  (pas de demarrage avec la session)   -NoDesktop  (pas de raccourci sur le Bureau)
           -ForUser <compte>  (raccourcis et demarrage pour ce compte, s'il a une session ouverte)
           -ImportState <state.json>  (reprend des reglages existants si aucun n'est encore installe)   -Quiet
+          -NoLaunch  (n'ouvre pas l'appli a la fin)   -StatusFile <fichier>  (etapes pour GoXLR-Mini-Setup.exe)
+Code de sortie : 0 si l'installation est faite, 1 sinon.
 #>
-param([switch]$NoStartup, [switch]$NoDesktop, [string]$ForUser, [string]$ImportState, [switch]$Quiet)
+param([switch]$NoStartup, [switch]$NoDesktop, [string]$ForUser, [string]$ImportState, [switch]$Quiet,
+      [switch]$NoLaunch, [string]$StatusFile)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $src = $PSScriptRoot
@@ -22,11 +25,21 @@ if (-not (New-Object Security.Principal.WindowsPrincipal $me).IsInRole([Security
   if ($NoDesktop) { $a += '-NoDesktop' }
   if ($ForUser) { $a += @('-ForUser', ('"' + $ForUser + '"')) }
   if ($ImportState) { $a += @('-ImportState', ('"' + $ImportState + '"')) }
-  Start-Process powershell.exe -Verb RunAs -ArgumentList $a -Wait
-  exit
+  if ($Quiet) { $a += '-Quiet' }
+  if ($NoLaunch) { $a += '-NoLaunch' }
+  if ($StatusFile) { $a += @('-StatusFile', ('"' + $StatusFile + '"')) }
+  $p = Start-Process powershell.exe -Verb RunAs -ArgumentList $a -Wait -PassThru
+  exit $p.ExitCode
 }
 
 function Say($m) { Write-Host ('  ' + $m) }
+function Status($s) { if ($StatusFile) { Add-Content -LiteralPath $StatusFile -Value $s -Encoding UTF8 } }
+trap {
+  Status ('error|' + $_.Exception.Message)
+  Write-Host ('  Erreur : ' + $_.Exception.Message) -ForegroundColor Red
+  if (-not $Quiet) { Read-Host 'Appuie sur Entree pour fermer' | Out-Null }
+  exit 1
+}
 function Get-UserDesktop($sid, $prof) {
   # Bureau reel du compte (redirige vers OneDrive, par exemple), lu dans sa ruche ; sinon <profil>\Desktop
   $k = "Registry::HKEY_USERS\$sid\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
@@ -55,12 +68,14 @@ $sid = (New-Object Security.Principal.NTAccount($user)).Translate([Security.Prin
 $profile = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid" -ErrorAction SilentlyContinue).ProfileImagePath
 if (-not (Test-Path "Registry::HKEY_USERS\$sid")) { Write-Warning "Le compte $user n'a pas de session ouverte : demarrage avec la session non configure." }
 
+Status 'stop'
 Say 'Arret de la version en place...'
 Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
 Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($dst + '\', [StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 Start-Sleep 1
 
+Status 'copy'
 Say ("Copie dans " + $dst + '...')
 New-Item -ItemType Directory -Force $dst, $data | Out-Null
 foreach ($rel in $man.files.PSObject.Properties.Name) {
@@ -74,6 +89,7 @@ if ($ImportState -and (Test-Path $ImportState) -and -not (Test-Path (Join-Path $
   Say 'Reglages existants repris.'
 }
 
+Status 'task'
 Say 'Tache du moteur (demarre avec Windows)...'
 $action = New-ScheduledTaskAction -Execute (Join-Path $dst 'python\pythonw.exe') -Argument ('"' + (Join-Path $dst 'goxlrctl.py') + '" daemon') -WorkingDirectory $dst
 $triggers = @((New-ScheduledTaskTrigger -AtStartup), (New-ScheduledTaskTrigger -AtLogOn))
@@ -82,6 +98,7 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
 Register-ScheduledTask -TaskName $name -Action $action -Trigger $triggers -Principal $principal -Settings $settings -Description 'GoXLR Mini : moteur qui pilote la GoXLR Mini (interface sur http://127.0.0.1:14565)' -Force | Out-Null
 Start-ScheduledTask -TaskName $name
 
+Status 'links'
 $exe = Join-Path $dst ('app\' + $name + '.exe')
 $ico = Join-Path $dst 'app\app.ico'
 $ws = New-Object -ComObject WScript.Shell
@@ -109,17 +126,26 @@ $vals = [ordered]@{ DisplayName = $name; DisplayVersion = [string]$man.version; 
 foreach ($k in $vals.Keys) { New-ItemProperty $key -Name $k -Value $vals[$k] -PropertyType String -Force | Out-Null }
 foreach ($k in 'NoModify', 'NoRepair') { New-ItemProperty $key -Name $k -Value 1 -PropertyType DWord -Force | Out-Null }
 
+Status 'start'
 Say 'Demarrage du moteur...'
 $ok = $false
+$seen = -1
 for ($i = 0; $i -lt 40; $i++) {
   Start-Sleep 1
-  try { $h = Invoke-RestMethod http://127.0.0.1:14565/api/health -TimeoutSec 3; if ($h.version -eq $man.version) { $ok = $true; break } } catch { }
+  try {
+    $h = Invoke-RestMethod http://127.0.0.1:14565/api/health -TimeoutSec 3
+    if ($h.version -eq $man.version) {
+      $ok = $true
+      if ($seen -lt 0) { $seen = $i }
+      if ($h.connected -or $i - $seen -ge 6) { break }      # la GoXLR se reconnecte en une ou deux secondes
+    }
+  } catch { }
 }
 if ($ok) { Say ("Moteur " + $h.version + " en route : GoXLR " + $(if ($h.connected) { 'connectee' } else { 'pas encore detectee' }) + '.') }
 else { Write-Warning 'Le moteur ne repond pas encore. Journal : C:\ProgramData\GoXLR Mini\goxlrctl.log' }
 
 # l'appli se lance sans droits administrateur, dans la session du compte cible
-if (Test-Path "Registry::HKEY_USERS\$sid") {
+if (-not $NoLaunch -and (Test-Path "Registry::HKEY_USERS\$sid")) {
   try {
     $t = 'GoXLR Mini (premier lancement)'
     $p = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
@@ -132,5 +158,7 @@ if (Test-Path "Registry::HKEY_USERS\$sid") {
   } catch { Write-Warning ("Lance GoXLR Mini depuis le menu Demarrer (" + $_.Exception.Message + ')') }
 }
 Write-Host ''
+Status ('ok|' + $(if ($ok -and $h.connected) { 'connected' } elseif ($ok) { 'absent' } else { 'starting' }))
 Write-Host ("GoXLR Mini " + $man.version + " est installe.") -ForegroundColor Green
 if (-not $Quiet) { Read-Host 'Appuie sur Entree pour fermer' | Out-Null }
+exit 0

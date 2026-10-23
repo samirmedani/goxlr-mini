@@ -1,5 +1,18 @@
 # Nouveautés
 
+## 4.2.0
+
+**Nouveau**
+- Installeur en un seul fichier, `GoXLR-Mini-Setup.exe` : un clic sur « Installer », Windows demande
+  l'autorisation, puis « Ouvrir GoXLR Mini ». Il suit le thème clair ou sombre de Windows, prévient si le pilote
+  GoXLR manque ou si GoXLR Utility est ouvert, et sait mettre à jour une version déjà installée. Le ZIP reste
+  proposé à côté.
+- Installation sans fenêtre : `GoXLR-Mini-Setup.exe /quiet` (options `/nodesktop` et `/nostartup`).
+
+**Corrigé**
+- `install.ps1` rend un code de sortie fiable et garde l'option `-Quiet` quand il redemande les droits
+  administrateur.
+
 ## 4.1.5
 
 **Corrigé**
