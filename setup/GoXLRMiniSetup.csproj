@@ -11,7 +11,7 @@
     <RootNamespace>GoXLRMiniSetup</RootNamespace>
     <ApplicationIcon>..\app\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>4.2.0</Version>
+    <Version>4.3.0</Version>
     <Product>GoXLR Mini</Product>
     <Company>GoXLR Mini contributors</Company>
     <Description>Installe GoXLR Mini</Description>

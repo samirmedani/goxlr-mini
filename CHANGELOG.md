@@ -1,5 +1,19 @@
 # Nouveautés
 
+## 4.3.0
+
+**Nouveau**
+- Nouvelle interface claire, dans l'esprit d'Apple : barre latérale en verre, grands titres, police Inter,
+  icônes Lucide, fond lumineux. Le mixeur montre quatre faders en capsule, un bouton rond pour couper chaque
+  voie (orange quand elle est coupée d'une seule sortie) et les autres voies dans une liste groupée.
+- La fenêtre se redimensionne et l'interface suit : sur une petite fenêtre, la barre latérale devient une
+  colonne d'icônes et les panneaux passent les uns sous les autres.
+- Le menu ⋯ est dans l'en-tête, à côté de l'état du micro. Le menu de l'icône de notification passe aussi en clair.
+
+**Corrigé**
+- Fenêtre de mise à jour : un point des notes écrit sur plusieurs lignes s'affiche d'un seul tenant, comme sur
+  GitHub, au lieu d'être coupé en morceaux.
+
 ## 4.2.0
 
 **Nouveau**

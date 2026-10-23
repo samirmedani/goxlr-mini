@@ -79,7 +79,7 @@ sealed class MiniContext : ApplicationContext
 
 sealed class MainForm : Form
 {
-    const int LogicalW = 1280, LogicalH = 800;
+    const int LogicalW = 1280, LogicalH = 800, MinW = 900, MinH = 620;
     readonly WebView2 web = new();
     readonly NotifyIcon tray = new();
     readonly HttpClient http = new() { Timeout = TimeSpan.FromSeconds(3) };
@@ -101,15 +101,15 @@ sealed class MainForm : Form
         Text = "GoXLR Mini";
         var iconPath = Path.Combine(AppContext.BaseDirectory, "app.ico");
         if (File.Exists(iconPath)) Icon = new Icon(iconPath);
-        FormBorderStyle = FormBorderStyle.FixedSingle;
-        MaximizeBox = false;
+        FormBorderStyle = FormBorderStyle.Sizable;           // l'interface s'adapte a la taille de la fenetre
+        MaximizeBox = true;
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(9, 9, 12);
+        BackColor = Color.FromArgb(245, 245, 247);
         ShowInTaskbar = true;
         web.Dock = DockStyle.Fill;
-        web.DefaultBackgroundColor = Color.FromArgb(9, 9, 12);
+        web.DefaultBackgroundColor = Color.FromArgb(245, 245, 247);
         Controls.Add(web);
-        SizeToDpi();
+        SizeToDpi(initial: true);
         BuildIcons();
         BuildTray();
     }
@@ -120,22 +120,23 @@ sealed class MainForm : Form
         _ = web.Handle;
     }
 
-    void SizeToDpi()
+    void SizeToDpi(bool initial)
     {
         float scale = DeviceDpi / 96f;
-        ClientSize = new Size((int)Math.Round(LogicalW * scale), (int)Math.Round(LogicalH * scale));
+        MinimumSize = SizeFromClientSize(new Size((int)Math.Round(MinW * scale), (int)Math.Round(MinH * scale)));
+        if (initial) ClientSize = new Size((int)Math.Round(LogicalW * scale), (int)Math.Round(LogicalH * scale));
     }
 
     protected override void OnDpiChanged(DpiChangedEventArgs e)
     {
         base.OnDpiChanged(e);
-        SizeToDpi();
+        SizeToDpi(initial: false);
     }
 
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        Native.DarkTitleBar(Handle);
+        Native.LightTitleBar(Handle);
     }
 
     // ---------- WebView2 ----------
@@ -407,7 +408,7 @@ sealed class MainForm : Form
         tray.Icon = icons["off"];
         iconKey = "off";
         tray.Text = "GoXLR Mini";
-        var menu = new ContextMenuStrip { Renderer = new DarkRenderer(), ShowImageMargin = false, ShowCheckMargin = true, Font = new Font("Segoe UI", 10f), Padding = new Padding(4) };
+        var menu = new ContextMenuStrip { Renderer = new MenuRenderer(), ShowImageMargin = false, ShowCheckMargin = true, Font = new Font("Segoe UI", 10f), Padding = new Padding(4) };
         var open = new ToolStripMenuItem("Ouvrir GoXLR Mini", null, (_, _) => ShowFromTray()) { Font = new Font("Segoe UI Semibold", 10f) };
         micItem.Click += async (_, _) => await ToggleMic();
         startupItem.Click += (_, _) => { SetStartup(!startupItem.Checked); startupItem.Checked = IsStartup(); };
@@ -582,31 +583,32 @@ sealed class Osd : Form
     }
 }
 
-sealed class DarkRenderer : ToolStripProfessionalRenderer
+/// Menu de la zone de notification, dans le style de l'interface : fond clair, survol bleu.
+sealed class MenuRenderer : ToolStripProfessionalRenderer
 {
-    public DarkRenderer() : base(new DarkColors()) { RoundedEdges = true; }
+    public MenuRenderer() : base(new MenuColors()) { RoundedEdges = true; }
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
     {
-        e.TextColor = e.Item.Enabled ? Color.FromArgb(245, 245, 247) : Color.FromArgb(110, 110, 115);
+        e.TextColor = !e.Item.Enabled ? Color.FromArgb(142, 142, 147) : e.Item.Selected ? Color.White : Color.FromArgb(29, 29, 31);
         base.OnRenderItemText(e);
     }
     protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
     {
-        e.ArrowColor = Color.FromArgb(200, 200, 205);
+        e.ArrowColor = e.Item != null && e.Item.Selected ? Color.White : Color.FromArgb(110, 110, 115);
         base.OnRenderArrow(e);
     }
     protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
     {
         var r = e.ImageRectangle;
-        using var pen = new Pen(Color.FromArgb(10, 132, 255), 2f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var pen = new Pen(e.Item.Selected ? Color.White : Color.FromArgb(0, 113, 227), 2f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
         e.Graphics.DrawLines(pen, new[] { new PointF(r.Left + r.Width * .2f, r.Top + r.Height * .52f), new PointF(r.Left + r.Width * .42f, r.Top + r.Height * .74f), new PointF(r.Left + r.Width * .8f, r.Top + r.Height * .3f) });
     }
 }
 
-sealed class DarkColors : ProfessionalColorTable
+sealed class MenuColors : ProfessionalColorTable
 {
-    static readonly Color Bg = Color.FromArgb(36, 36, 40), Sel = Color.FromArgb(10, 132, 255), Line = Color.FromArgb(58, 58, 64);
+    static readonly Color Bg = Color.FromArgb(250, 250, 252), Sel = Color.FromArgb(0, 113, 227), Line = Color.FromArgb(226, 226, 231);
     public override Color ToolStripDropDownBackground => Bg;
     public override Color ImageMarginGradientBegin => Bg;
     public override Color ImageMarginGradientMiddle => Bg;
@@ -636,13 +638,13 @@ static class Native
     [DllImport("user32.dll")]
     static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
 
-    public static void DarkTitleBar(IntPtr h)
+    /// Barre de titre de la couleur du fond de l'interface (#F5F5F7), texte #1D1D1F.
+    public static void LightTitleBar(IntPtr h)
     {
-        int on = 1, caption = 0x000C0909, textColor = 0x00F7F5F5, border = 0x00201E1E;
-        DwmSetWindowAttribute(h, 20, ref on, 4);        // DWMWA_USE_IMMERSIVE_DARK_MODE
+        int off = 0, caption = 0x00F7F5F5, textColor = 0x001F1D1D;
+        DwmSetWindowAttribute(h, 20, ref off, 4);       // DWMWA_USE_IMMERSIVE_DARK_MODE
         DwmSetWindowAttribute(h, 35, ref caption, 4);   // DWMWA_CAPTION_COLOR
         DwmSetWindowAttribute(h, 36, ref textColor, 4); // DWMWA_TEXT_COLOR
-        DwmSetWindowAttribute(h, 34, ref border, 4);    // DWMWA_BORDER_COLOR
     }
 
     public static void RoundCorners(IntPtr h)
