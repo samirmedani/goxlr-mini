@@ -1,0 +1,1697 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoXLR Mini</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg-bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2334343c%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23101014%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lg-a%22%20x1%3D%220%22%20y1%3D%221%22%20x2%3D%220%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%235E5CE6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2364D2FF%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lg-b%22%20x1%3D%220%22%20y1%3D%221%22%20x2%3D%220%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF375F%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF9F0A%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2216%22%20fill%3D%22url(%23lg-bg)%22%2F%3E%3Crect%20x%3D%222.5%22%20y%3D%222.5%22%20width%3D%2259%22%20height%3D%2259%22%20rx%3D%2215.5%22%20fill%3D%22none%22%20stroke%3D%22rgba(255%2C255%2C255%2C.14)%22%2F%3E%3Cg%3E%3Crect%20x%3D%2214%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%2236%22%20rx%3D%223%22%20fill%3D%22%23000%22%20opacity%3D%22.55%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%2230%22%20width%3D%226%22%20height%3D%2220%22%20rx%3D%223%22%20fill%3D%22url(%23lg-a)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2227%22%20width%3D%2212%22%20height%3D%226%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2225%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%2236%22%20rx%3D%223%22%20fill%3D%22%23000%22%20opacity%3D%22.55%22%2F%3E%3Crect%20x%3D%2225%22%20y%3D%2221%22%20width%3D%226%22%20height%3D%2229%22%20rx%3D%223%22%20fill%3D%22url(%23lg-b)%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%2218%22%20width%3D%2212%22%20height%3D%226%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2236%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%2236%22%20rx%3D%223%22%20fill%3D%22%23000%22%20opacity%3D%22.55%22%2F%3E%3Crect%20x%3D%2236%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%2214%22%20rx%3D%223%22%20fill%3D%22url(%23lg-a)%22%2F%3E%3Crect%20x%3D%2233%22%20y%3D%2233%22%20width%3D%2212%22%20height%3D%226%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2247%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%2236%22%20rx%3D%223%22%20fill%3D%22%23000%22%20opacity%3D%22.55%22%2F%3E%3Crect%20x%3D%2247%22%20y%3D%2226%22%20width%3D%226%22%20height%3D%2224%22%20rx%3D%223%22%20fill%3D%22url(%23lg-b)%22%2F%3E%3Crect%20x%3D%2244%22%20y%3D%2223%22%20width%3D%2212%22%20height%3D%226%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<style>
+:root{
+  --bg:#09090c; --side:rgba(22,22,26,.78); --card:rgba(255,255,255,.035); --card2:rgba(255,255,255,.06);
+  --stroke:rgba(255,255,255,.075); --stroke2:rgba(255,255,255,.13);
+  --text:#f5f5f7; --text2:rgba(235,235,245,.62); --text3:rgba(235,235,245,.34);
+  --accent:#0A84FF; --red:#FF453A; --green:#30D158; --yellow:#FFD60A; --orange:#FF9F0A;
+  --r:20px; --ease:cubic-bezier(.22,.8,.24,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI Variable Display","Segoe UI Variable Text","SF Pro Display",-apple-system,"Segoe UI",system-ui,sans-serif;
+  font-size:13px;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;cursor:default}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+svg{display:block}
+.glow{position:fixed;inset:0;pointer-events:none;z-index:0;transition:background 1.2s var(--ease)}
+#app{position:relative;z-index:1;display:grid;grid-template-columns:232px 1fr;height:100%}
+/* barre laterale */
+aside{background:var(--side);backdrop-filter:blur(40px) saturate(1.4);border-right:1px solid var(--stroke);display:flex;flex-direction:column;padding:22px 14px 16px}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 22px}
+.brand svg{width:40px;height:40px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+.brand b{font-size:15px;font-weight:650;letter-spacing:-.01em;display:block}
+.brand small{color:var(--text3);font-size:11.5px}
+nav{display:flex;flex-direction:column;gap:3px}
+nav button{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;color:var(--text2);font-size:13.5px;font-weight:500;transition:background .2s,color .2s;position:relative}
+nav button svg{width:19px;height:19px}
+nav button:hover{background:rgba(255,255,255,.045);color:var(--text)}
+nav button.on{background:rgba(255,255,255,.085);color:var(--text)}
+nav button.on svg{color:var(--accent)}
+nav .badge{margin-left:auto;min-width:18px;height:18px;border-radius:9px;background:var(--orange);color:#1a1000;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
+.side-foot{margin-top:auto;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--stroke)}
+.conn{display:flex;align-items:center;gap:9px;font-weight:600;font-size:12.5px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(255,69,58,.15)}
+.dot.ok{background:var(--green);box-shadow:0 0 0 4px rgba(48,209,88,.15)}
+.side-foot small{display:block;color:var(--text3);font-size:11px;margin-top:6px;line-height:1.5}
+/* zone principale */
+main{position:relative;overflow:hidden;display:flex;flex-direction:column}
+header{display:flex;align-items:flex-end;justify-content:space-between;padding:26px 34px 14px}
+header h1{font-size:26px;font-weight:700;letter-spacing:-.025em}
+header p{color:var(--text2);font-size:13px;margin-top:3px}
+.hdr-actions{display:flex;gap:10px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 15px;border-radius:17px;background:var(--card2);border:1px solid var(--stroke);font-weight:600;font-size:12.5px;transition:all .2s var(--ease)}
+.pill svg{width:16px;height:16px}
+.pill:hover{background:rgba(255,255,255,.1)}
+.pill.danger{background:rgba(255,69,58,.16);border-color:rgba(255,69,58,.4);color:#ff6b61}
+.pill.primary{background:var(--accent);border-color:transparent;color:#fff}
+.pill.primary:hover{filter:brightness(1.1)}
+.page{position:absolute;inset:86px 0 0 0;padding:6px 34px 30px;overflow:hidden;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .28s var(--ease),transform .28s var(--ease)}
+.page.on{opacity:1;transform:none;pointer-events:auto}
+.card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--r);padding:18px}
+.card h3{font-size:13px;font-weight:650;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card h3 small{color:var(--text3);font-weight:500;margin-left:auto;font-size:11.5px}
+.muted-txt{color:var(--text2)}
+/* faders */
+.strips{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;height:420px}
+.strip{position:relative;display:flex;flex-direction:column;align-items:center;padding:14px 14px 14px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--stroke);transition:border-color .3s}
+.strip.is-muted{border-color:rgba(255,69,58,.28)}
+.strip-head{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border-radius:14px;transition:background .2s}
+.strip-head:hover{background:rgba(255,255,255,.06)}
+.chip-ico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);flex:none}
+.chip-ico svg{width:19px;height:19px}
+.strip-head .nm{font-weight:650;font-size:14.5px;text-align:left;line-height:1.15}
+.strip-head .nm small{display:block;color:var(--text3);font-size:11px;font-weight:500}
+.strip-head .chev{margin-left:auto;width:14px;height:14px;color:var(--text3)}
+.sl{position:relative;touch-action:none}
+.sl-track{position:relative;overflow:hidden;background:rgba(255,255,255,.07);cursor:pointer}
+.sl-fill{position:absolute;left:0;bottom:0;background:var(--c);transition:height .14s var(--ease),width .14s var(--ease)}
+.sl.active .sl-fill,.sl.active .sl-knob{transition:none}
+.sl.v .sl-track{width:78px;height:252px;border-radius:24px}
+.sl.v .sl-fill{width:100%;background:linear-gradient(0deg,color-mix(in srgb,var(--c) 55%,#000),var(--c));box-shadow:0 0 36px color-mix(in srgb,var(--c) 40%,transparent)}
+.sl.v .sl-fill::after{content:"";position:absolute;left:22px;right:22px;top:9px;height:4px;border-radius:2px;background:rgba(255,255,255,.75)}
+.sl.v .sl-knob{display:none}
+.sl.h .sl-track{height:8px;border-radius:4px;overflow:visible}
+.sl.h .sl-fill{top:0;height:100%;border-radius:4px}
+.sl.h .sl-knob{position:absolute;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.45);transition:left .14s var(--ease)}
+.sl.h:hover .sl-knob,.sl.h.active .sl-knob{transform:scale(1.08)}
+.ghost{position:absolute;left:-6px;right:-6px;height:0;border-top:2px dashed rgba(255,255,255,.55);opacity:0;transition:opacity .25s,bottom .12s}
+.ghost.show{opacity:1}
+.strip .sl.v{margin-top:14px}
+.strip.is-muted .sl-fill{filter:saturate(.15) brightness(.55);box-shadow:none}
+.val{font-size:30px;font-weight:300;letter-spacing:-.03em;margin-top:12px;font-variant-numeric:tabular-nums;line-height:1}
+.val span{font-size:15px;color:var(--text3);margin-left:2px}
+.mute-btn{margin-top:12px;width:100%;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.06);font-weight:600;font-size:13px;transition:all .22s var(--ease)}
+.mute-btn svg{width:17px;height:17px}
+.mute-btn:hover{background:rgba(255,255,255,.1)}
+.mute-btn.on{background:var(--red);color:#fff;box-shadow:0 8px 24px rgba(255,69,58,.35)}
+.strip .fnum{display:none}
+.phys-note{position:absolute;bottom:118px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--text2);white-space:nowrap;opacity:0;transition:opacity .25s;pointer-events:none;background:rgba(0,0,0,.6);padding:3px 8px;border-radius:8px}
+.phys-note.show{opacity:1}
+.others{display:grid;grid-template-columns:1fr 1fr;gap:6px 26px;margin-top:16px;padding:14px 20px}
+.orow{display:grid;grid-template-columns:30px 112px 1fr 44px 34px;align-items:center;gap:12px;height:40px}
+.orow .chip-ico{width:30px;height:30px;border-radius:9px}
+.orow .chip-ico svg{width:16px;height:16px}
+.orow .nm{font-weight:550}
+.orow .pct{color:var(--text2);text-align:right;font-variant-numeric:tabular-nums}
+.ibtn{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:var(--text2);transition:all .2s}
+.ibtn svg{width:17px;height:17px}
+.ibtn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.ibtn.on{color:#fff;background:var(--red)}
+/* popover */
+.pop{position:fixed;z-index:50;min-width:220px;padding:8px;border-radius:16px;background:rgba(36,36,40,.92);backdrop-filter:blur(30px) saturate(1.6);border:1px solid var(--stroke2);box-shadow:0 24px 60px rgba(0,0,0,.55);opacity:0;transform:scale(.96) translateY(-4px);transform-origin:top left;transition:opacity .16s,transform .16s var(--ease);pointer-events:none}
+.pop.on{opacity:1;transform:none;pointer-events:auto}
+.pop .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:330px}
+.pop .tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px 10px;border-radius:12px;font-size:12px;font-weight:550;position:relative}
+.pop .tile:hover{background:rgba(255,255,255,.07)}
+.pop .tile.cur{background:rgba(255,255,255,.1)}
+.pop .tile .chip-ico{width:36px;height:36px}
+.pop .tile em{position:absolute;top:6px;right:6px;font-style:normal;font-size:9.5px;color:var(--text3);font-weight:700}
+.pop .ptitle{font-size:11.5px;font-weight:650;color:var(--text3);padding:6px 8px 8px;text-transform:uppercase;letter-spacing:.06em}
+.menu-item{display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;border-radius:10px;font-weight:500;text-align:left}
+.menu-item svg{width:17px;height:17px;color:var(--text2)}
+.menu-item:hover{background:var(--accent);color:#fff}
+.menu-item:hover svg{color:#fff}
+.menu-sep{height:1px;background:var(--stroke);margin:6px 8px}
+.swatches{display:grid;grid-template-columns:repeat(6,30px);gap:9px;padding:6px}
+.sw{width:30px;height:30px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);transition:transform .15s}
+.sw:hover{transform:scale(1.12)}
+.sw.cur{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #fff}
+.sw-custom{display:flex;align-items:center;gap:10px;padding:8px 6px 4px;color:var(--text2);font-size:12px}
+.sw-custom input{width:34px;height:26px;border:0;background:none;padding:0;cursor:pointer}
+/* micro */
+.mic-grid{display:grid;grid-template-columns:400px 1fr;gap:18px;height:100%}
+.meter{display:flex;gap:3px;height:46px;align-items:stretch;margin:4px 0 6px}
+.meter i{flex:1;border-radius:3px;background:rgba(255,255,255,.07);transition:background .06s}
+.meter-db{display:flex;justify-content:space-between;color:var(--text3);font-size:11px;font-variant-numeric:tabular-nums}
+.meter-db b{color:var(--text);font-size:22px;font-weight:300;letter-spacing:-.02em}
+.seg{display:flex;padding:3px;border-radius:12px;background:rgba(255,255,255,.06);gap:2px}
+.seg button{flex:1;padding:8px 10px;border-radius:9px;font-weight:600;font-size:12.5px;color:var(--text2);transition:all .2s var(--ease);white-space:nowrap}
+.seg button.on{background:rgba(255,255,255,.14);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.field{margin-top:16px}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;font-weight:550}
+.field-top span{color:var(--text2);font-variant-numeric:tabular-nums;font-weight:500}
+.btn-row{display:flex;gap:10px;margin-top:18px}
+.btn-row .pill{flex:1;justify-content:center;height:40px;border-radius:13px}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.preset{position:relative;text-align:left;padding:14px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid var(--stroke);transition:all .22s var(--ease)}
+.preset:hover{background:rgba(255,255,255,.065)}
+.preset.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.preset .chip-ico{width:32px;height:32px;margin-bottom:10px}
+.preset b{display:block;font-size:13.5px;font-weight:650}
+.preset p{color:var(--text2);font-size:11.5px;line-height:1.4;margin-top:3px}
+.tag{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:3px 7px;border-radius:7px;background:rgba(48,209,88,.18);color:#4cdc77;letter-spacing:.02em}
+.tabs{display:flex;gap:4px;margin-bottom:14px}
+.tabs button{padding:7px 13px;border-radius:10px;color:var(--text2);font-weight:600;font-size:12.5px}
+.tabs button.on{background:rgba(255,255,255,.1);color:var(--text)}
+.eq{position:relative;height:200px}
+.eq canvas{position:absolute;inset:0;width:100%;height:100%}
+.eq-bands{position:relative;display:grid;grid-template-columns:repeat(6,1fr);height:100%;z-index:1}
+.eq-band{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}
+.eq-band .sl.v .sl-track{width:6px;height:150px;border-radius:3px;overflow:visible;background:rgba(255,255,255,.1)}
+.eq-band .sl.v .sl-fill{display:none}
+.eq-band .sl.v .sl-knob{display:block;position:absolute;left:50%;width:22px;height:22px;margin:0 0 -11px -11px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.5);transition:bottom .14s var(--ease)}
+.eq-band small{color:var(--text3);font-size:11px}
+.eq-band b{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.switch{width:44px;height:26px;border-radius:13px;background:rgba(255,255,255,.16);position:relative;transition:background .22s;flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .25s var(--ease)}
+.switch.on{background:var(--green)}
+.switch.on::after{transform:translateX(18px)}
+.row-switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0}
+.row-switch b{font-weight:600;display:block}
+.row-switch small{color:var(--text2);font-size:11.5px;display:block;margin-top:2px;line-height:1.35}
+/* routage */
+.route-grid{display:grid;grid-template-columns:1fr 330px;gap:18px;height:100%}
+table.mx{width:100%;border-collapse:separate;border-spacing:0}
+.mx th{padding:0 4px 12px;font-weight:600;font-size:11.5px;color:var(--text2);text-align:center;vertical-align:bottom}
+.mx th .chip-ico{margin:0 auto 7px;width:32px;height:32px;--c:#8e8e93}
+.mx th:first-child{text-align:left}
+.mx td{padding:9px 4px;text-align:center;border-top:1px solid var(--stroke)}
+.legend{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 18px;margin-top:18px;padding-top:16px;border-top:1px solid var(--stroke);color:var(--text2);font-size:11.5px}
+.legend b{color:var(--text);font-weight:600;margin-right:4px}
+.hint-card{display:flex;gap:12px;align-items:flex-start}
+.hint-card p{color:var(--text2);font-size:12px;line-height:1.5}
+.hint-card b{color:var(--text)}
+.mx td:first-child{text-align:left}
+.mx .rname{display:flex;align-items:center;gap:11px;font-weight:600}
+.mx .rname .chip-ico{width:30px;height:30px;border-radius:9px}
+.mx .rname .chip-ico svg{width:16px;height:16px}
+.node{width:30px;height:30px;border-radius:50%;margin:auto;display:grid;place-items:center;border:2px solid rgba(255,255,255,.14);transition:all .22s var(--ease)}
+.node svg{width:15px;height:15px;opacity:0;transform:scale(.4);transition:all .22s var(--ease);color:#fff}
+.node:hover{border-color:rgba(255,255,255,.35)}
+.node.on{background:var(--c);border-color:var(--c);box-shadow:0 0 16px color-mix(in srgb,var(--c) 55%,transparent)}
+.node.on svg{opacity:1;transform:none}
+/* eclairage */
+.light-grid{display:grid;grid-template-columns:470px 1fr;gap:18px;height:100%}
+.device{display:grid;place-items:center;padding:10px 0 4px}
+.device svg{width:100%;height:auto}
+.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.theme{padding:10px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.03);text-align:left;transition:all .2s}
+.theme:hover{background:rgba(255,255,255,.06)}
+.theme.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme .bars{display:flex;gap:4px;height:34px;margin-bottom:8px}
+.theme .bars i{flex:1;border-radius:6px}
+.theme b{font-size:12px;font-weight:600}
+.custom-row{display:flex;align-items:center;gap:12px;padding:7px 0}
+.custom-row .lbl{flex:1;font-weight:550}
+.custom-row .sws{display:flex;gap:8px}
+.swb{width:30px;height:30px;border-radius:9px;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);transition:transform .15s}
+.swb:hover{transform:scale(1.08)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chips button{padding:8px 13px;border-radius:11px;background:rgba(255,255,255,.055);font-weight:600;font-size:12px;color:var(--text2);transition:all .2s}
+.chips button.on{background:var(--text);color:#000}
+/* scenes */
+.scene-grid{display:grid;grid-template-columns:1fr 340px;gap:18px;height:100%}
+.scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.scene{position:relative;text-align:left;padding:16px;border-radius:20px;border:1px solid var(--stroke);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));transition:all .25s var(--ease);min-height:168px;display:flex;flex-direction:column}
+.scene:hover{transform:translateY(-2px);border-color:var(--stroke2)}
+.scene.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 14px 40px color-mix(in srgb,var(--accent) 22%,transparent)}
+.scene .chip-ico{width:38px;height:38px;border-radius:12px;margin-bottom:12px}
+.scene b{font-size:14.5px;font-weight:650}
+.scene p{color:var(--text2);font-size:11.5px;line-height:1.4;margin-top:4px;flex:1}
+.scene .lane{display:flex;gap:6px;margin-top:12px}
+.scene .lane span{flex:1;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.scene .lane svg{width:15px;height:15px}
+.scene .tag{background:color-mix(in srgb,var(--accent) 25%,transparent);color:#7cc0ff}
+.mine{margin-top:16px}
+.mine-list{display:flex;flex-direction:column;gap:6px;max-height:120px;overflow:auto}
+.mine-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04)}
+.mine-item b{flex:1;font-weight:600}
+.save-row{display:flex;gap:8px;margin-top:10px}
+.save-row input{flex:1;height:36px;border-radius:11px;border:1px solid var(--stroke2);background:rgba(0,0,0,.25);padding:0 12px;outline:none;user-select:text}
+.save-row input:focus{border-color:var(--accent)}
+.advice{display:flex;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.035);margin-bottom:8px}
+.advice .chip-ico{width:30px;height:30px;border-radius:9px}
+.advice .chip-ico svg{width:16px;height:16px}
+.advice b{display:block;font-weight:600;font-size:12.5px}
+.advice p{color:var(--text2);font-size:11.5px;line-height:1.4;margin-top:2px}
+.advice .pill{height:28px;margin-top:8px;padding:0 11px;font-size:11.5px}
+/* menu bas droite, toast, feuille */
+#fab{position:fixed;right:22px;bottom:20px;z-index:40;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(44,44,48,.85);backdrop-filter:blur(20px);border:1px solid var(--stroke2);box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .2s var(--ease),background .2s}
+#fab:hover{transform:scale(1.06);background:rgba(60,60,66,.9)}
+#fab svg{width:20px;height:20px}
+#toast{position:fixed;left:50%;bottom:24px;z-index:60;transform:translate(-50%,20px);opacity:0;display:flex;align-items:center;gap:12px;padding:11px 12px 11px 18px;border-radius:16px;background:rgba(44,44,48,.92);backdrop-filter:blur(24px);border:1px solid var(--stroke2);box-shadow:0 16px 40px rgba(0,0,0,.5);font-weight:550;transition:all .3s var(--ease);pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{color:var(--accent);font-weight:650;padding:4px 8px;border-radius:8px}
+#toast button:hover{background:rgba(10,132,255,.15)}
+#sheet{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .25s}
+#sheet.on{opacity:1;pointer-events:auto}
+.sheet-box{width:440px;padding:28px;border-radius:26px;background:rgba(32,32,36,.96);border:1px solid var(--stroke2);box-shadow:0 30px 80px rgba(0,0,0,.6);text-align:center;transform:scale(.95);transition:transform .3s var(--ease)}
+#sheet.on .sheet-box{transform:none}
+.sheet-box h2{font-size:19px;font-weight:700;letter-spacing:-.02em;margin-top:16px}
+.sheet-box p{color:var(--text2);margin-top:6px;line-height:1.5}
+.ring{width:96px;height:96px;margin:0 auto;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .ico{position:absolute;inset:0;display:grid;place-items:center;color:var(--accent)}
+.ring .ico svg{width:34px;height:34px;transform:none}
+.sheet-actions{display:flex;gap:10px;justify-content:center;margin-top:22px}
+.sheet-actions .pill{height:40px;padding:0 20px;border-radius:13px}
+.sheet-meter{margin-top:16px}
+#offline{position:absolute;left:34px;right:34px;top:86px;z-index:30;display:none;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;background:rgba(255,69,58,.12);border:1px solid rgba(255,69,58,.3);color:#ff8a82;font-weight:550}
+#offline.on{display:flex}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+/* v4 */
+.mute-btn.part{background:var(--orange);color:#1a1000;box-shadow:0 8px 24px rgba(255,159,10,.3)}
+.strip-head .nm{min-width:0;flex:1}
+.strip-head .nm small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strips{grid-template-columns:repeat(4,minmax(0,1fr))}
+.strip.is-part{border-color:rgba(255,159,10,.32)}
+.ibtn.part{color:#1a1000;background:var(--orange)}
+.pill.warn{background:rgba(255,159,10,.16);border-color:rgba(255,159,10,.4);color:#ffb340}
+.node.auto{border-style:dashed;cursor:help;opacity:.8}
+.mode-chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 6px 6px;max-width:330px}
+.mode-chips button{padding:7px 11px;border-radius:10px;background:rgba(255,255,255,.06);font-weight:600;font-size:12px;color:var(--text2)}
+.mode-chips button:hover{background:rgba(255,255,255,.1)}
+.mode-chips button.on{background:var(--text);color:#000}
+.pop .hint{color:var(--text3);font-size:11px;padding:0 8px 6px;max-width:330px;line-height:1.4}
+#offline .pill{margin-left:auto;height:28px;padding:0 12px;color:var(--text)}
+#offline.warn{background:rgba(255,159,10,.12);border-color:rgba(255,159,10,.32);color:#ffbd5c}
+#offline.info{background:rgba(10,132,255,.12);border-color:rgba(10,132,255,.32);color:#7cc0ff}
+.sim-badge{display:inline-block;margin-top:8px;padding:3px 8px;border-radius:7px;background:rgba(191,90,242,.18);color:#d48cff;font-size:10.5px;font-weight:700;letter-spacing:.03em}
+.meter-db .clip{color:var(--red);font-weight:700;font-size:11px;margin-left:8px;opacity:0;transition:opacity .2s}
+.meter-db .clip.on{opacity:1}
+.sheet-box.wide{width:660px;text-align:left}
+.sheet-box.wide h2{margin-top:0}
+.sheet-box.wide .sheet-actions{justify-content:flex-end}
+.diag-head{display:flex;align-items:center;gap:12px}
+.diag-head .chip-ico{width:40px;height:40px;border-radius:12px}
+.diag-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.diag-grid div{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04)}
+.diag-grid b{display:block;font-size:16px;font-weight:600;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diag-grid small{color:var(--text3);font-size:11px}
+.diag-log{margin-top:12px;height:150px;overflow:auto;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.35);font:11px/1.55 ui-monospace,Consolas,monospace;color:var(--text2);white-space:pre-wrap;user-select:text;-webkit-user-select:text}
+.diag-sim{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--stroke)}
+.diag-sim .pill{height:30px;padding:0 11px;font-size:11.5px}
+.auto-list{display:flex;flex-direction:column;gap:6px;margin:4px 0 10px;max-height:118px;overflow:auto}
+.auto-item{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 10px;border-radius:11px;background:rgba(255,255,255,.04);font-weight:550;font-size:12.5px}
+.auto-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auto-item em{font-style:normal;color:var(--text3);margin:0 4px}
+.auto-add{display:grid;grid-template-columns:1fr 1fr 34px;gap:6px}
+.inp{height:34px;border-radius:10px;border:1px solid var(--stroke2);background:rgba(0,0,0,.25);color:var(--text);padding:0 10px;outline:none;font:inherit;min-width:0;user-select:text;-webkit-user-select:text}
+.inp:focus{border-color:var(--accent)}
+select.inp option{background:#1c1c20}
+.auto-note{color:var(--text3);font-size:11.5px;margin-top:8px;line-height:1.4}
+.url-box{margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(0,0,0,.35);font:12.5px ui-monospace,Consolas,monospace;user-select:text;-webkit-user-select:text;word-break:break-all}
+/* mises a jour */
+.ver-row{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--stroke);font-size:11.5px;color:var(--text2);white-space:nowrap}
+.ver-row b{color:var(--text);font-weight:600}
+.ver-state{display:inline-flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis}
+.ver-state i{width:6px;height:6px;border-radius:50%;background:var(--green);flex:none}
+.ver-state.avail{color:#7cc0ff;cursor:pointer}
+.ver-state.avail i{background:var(--accent)}
+.ver-state.busy i{background:var(--orange)}
+.ver-row .ibtn{width:24px;height:24px;margin-left:auto;border-radius:7px}
+.ver-row .ibtn svg{width:14px;height:14px}
+.ver-row .ibtn.spin-on svg{animation:sp .9s linear infinite}
+.upd-btn{width:100%;justify-content:center;margin-top:8px;height:30px}
+.notes{margin-top:14px;max-height:270px;overflow:auto;padding:12px 16px;border-radius:12px;background:rgba(0,0,0,.28);color:var(--text2);font-size:12.5px;line-height:1.55;user-select:text;-webkit-user-select:text}
+.notes h4{color:var(--text);font-size:13px;margin:10px 0 4px}
+.notes h4:first-child{margin-top:0}
+.notes ul,.notes ol{padding-left:18px;margin:4px 0}
+.notes p{margin:4px 0}
+.notes code{font:11.5px ui-monospace,Consolas,monospace;background:rgba(255,255,255,.08);padding:1px 5px;border-radius:5px}
+.notes pre{background:rgba(0,0,0,.35);padding:8px 10px;border-radius:8px;overflow:auto}
+.notes a{color:#7cc0ff}
+.upd-progress{margin-top:16px}
+.upd-progress .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.upd-progress .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .2s}
+.upd-progress .bar.indet i{width:30%!important;animation:indet 1.1s ease-in-out infinite}
+@keyframes indet{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+.upd-progress small{display:block;margin-top:8px;color:var(--text2);font-size:12px}
+.upd-fail{margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(255,69,58,.12);border:1px solid rgba(255,69,58,.3);color:#ff8a82;font-size:12.5px}
+.upd-why{margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.28);color:#ffbd5c;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="glow" id="glow"></div>
+<div id="app">
+  <aside>
+    <div class="brand"><svg viewBox="0 0 64 64"><defs><linearGradient id="lg-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34343c"/><stop offset="1" stop-color="#101014"/></linearGradient><linearGradient id="lg-a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#5E5CE6"/><stop offset="1" stop-color="#64D2FF"/></linearGradient><linearGradient id="lg-b" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF375F"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lg-bg)"/><rect x="2.5" y="2.5" width="59" height="59" rx="15.5" fill="none" stroke="rgba(255,255,255,.14)"/><g><rect x="14" y="14" width="6" height="36" rx="3" fill="#000" opacity=".55"/><rect x="14" y="30" width="6" height="20" rx="3" fill="url(#lg-a)"/><rect x="11" y="27" width="12" height="6" rx="3" fill="#fff"/><rect x="25" y="14" width="6" height="36" rx="3" fill="#000" opacity=".55"/><rect x="25" y="21" width="6" height="29" rx="3" fill="url(#lg-b)"/><rect x="22" y="18" width="12" height="6" rx="3" fill="#fff"/><rect x="36" y="14" width="6" height="36" rx="3" fill="#000" opacity=".55"/><rect x="36" y="36" width="6" height="14" rx="3" fill="url(#lg-a)"/><rect x="33" y="33" width="12" height="6" rx="3" fill="#fff"/><rect x="47" y="14" width="6" height="36" rx="3" fill="#000" opacity=".55"/><rect x="47" y="26" width="6" height="24" rx="3" fill="url(#lg-b)"/><rect x="44" y="23" width="12" height="6" rx="3" fill="#fff"/></g></svg><div><b>GoXLR Mini</b><small>Logiciel libre</small></div></div>
+    <nav>
+      <button data-p="mixer" data-i="mixer">Mixeur</button>
+      <button data-p="mic" data-i="Mic">Micro</button>
+      <button data-p="routing" data-i="routing">Routage</button>
+      <button data-p="light" data-i="light">Éclairage</button>
+      <button data-p="scenes" data-i="scenes">Scènes<span class="badge" id="nav-badge" style="display:none"></span></button>
+    </nav>
+    <div class="side-foot"><div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">Connexion…</span></div><small id="conn-fw"></small><div class="ver-row"><b id="ver-txt">GoXLR Mini</b><span class="ver-state" id="ver-state"></span><button class="ibtn" id="ver-check" title="Rechercher une mise à jour"></button></div><button class="pill primary upd-btn" id="upd-btn" style="display:none">Mettre à jour</button></div>
+  </aside>
+  <main>
+    <header>
+      <div><h1 id="h-title">Mixeur</h1><p id="h-sub"></p></div>
+      <div class="hdr-actions"><button class="pill" id="hdr-mic">Micro</button></div>
+    </header>
+    <div id="offline"><span class="spin"></span><span id="offline-txt"></span><button class="pill" id="offline-diag">Diagnostic</button></div>
+    <section class="page" id="p-mixer"></section>
+    <section class="page" id="p-mic"></section>
+    <section class="page" id="p-routing"></section>
+    <section class="page" id="p-light"></section>
+    <section class="page" id="p-scenes"></section>
+  </main>
+</div>
+<button id="fab" title="Menu"></button>
+<div id="toast"></div>
+<div id="sheet"><div class="sheet-box" id="sheet-box"></div></div>
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+<script>
+"use strict";
+var ICONS = {
+  Mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
+  Chat: '<path d="M20.5 11.5a8 8 0 0 1-11.7 7.1L4 20l1.3-4.3A8 8 0 1 1 20.5 11.5z"/><path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01" stroke-width="2.6"/>',
+  Music: '<path d="M9 18V5.5l11-2.3v12.6"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="15.8" r="2.6"/>',
+  System: '<rect x="3" y="4" width="18" height="12.5" rx="2.2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
+  Game: '<path d="M7.2 8.5h9.6a4.2 4.2 0 0 1 4.1 3.6l.6 4.1a2.6 2.6 0 0 1-4.5 2.1L15 16.3H9l-2 2a2.6 2.6 0 0 1-4.5-2.1l.6-4.1a4.2 4.2 0 0 1 4.1-3.6z"/><path d="M8 11v3.2M6.4 12.6h3.2"/><path d="M15.5 12h.01M17.5 13.8h.01" stroke-width="2.6"/>',
+  Console: '<rect x="2.5" y="6.5" width="19" height="11" rx="3.5"/><circle cx="8" cy="12" r="2"/><path d="M14.5 12h4M16.5 10v4"/>',
+  LineIn: '<path d="M9 2.5v5M15 2.5v5M6.5 7.5h11v3.2a5.5 5.5 0 0 1-11 0z"/><path d="M12 16.2v5.3"/>',
+  Sample: '<path d="M3.5 12h1.5M7.5 8.5v7M11 5v14M14.5 8v8M18 10.5v3M20.5 12h0"/>',
+  Headphones: '<path d="M4 15.5V12a8 8 0 0 1 16 0v3.5"/><rect x="3" y="14" width="5" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/>',
+  MicMonitor: '<path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 3.5-3.5 4.4-3.5 7.6a3 3 0 0 1-6 0"/><path d="M9.8 9.6a2.2 2.2 0 0 1 4.4 0"/>',
+  LineOut: '<rect x="5.5" y="2.5" width="13" height="19" rx="3"/><circle cx="12" cy="14.3" r="3.6"/><circle cx="12" cy="7" r="1.1"/>',
+  BroadcastMix: '<circle cx="12" cy="12" r="2.1"/><path d="M15.8 8.2a5.4 5.4 0 0 1 0 7.6M8.2 15.8a5.4 5.4 0 0 1 0-7.6M18.7 5.3a9.5 9.5 0 0 1 0 13.4M5.3 18.7a9.5 9.5 0 0 1 0-13.4"/>',
+  ChatMic: '<path d="M4 13.5V12a8 8 0 0 1 16 0v1.5"/><rect x="3" y="13" width="4" height="6" rx="1.6"/><rect x="17" y="13" width="4" height="6" rx="1.6"/><path d="M19 19c0 1.6-2.4 2.6-6 2.6"/>',
+  Sampler: '<rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/>',
+  StreamMix2: '<circle cx="9" cy="12" r="1.9"/><path d="M12.4 8.6a4.8 4.8 0 0 1 0 6.8M5.6 15.4a4.8 4.8 0 0 1 0-6.8"/><path d="M16 9.2c.3-1 1.1-1.7 2.2-1.7 1.3 0 2.2.9 2.2 2 0 2-4.4 3.7-4.4 6.5h4.6"/>',
+  mixer: '<path d="M6 3.5v17M12 3.5v17M18 3.5v17"/><rect x="3.5" y="12.5" width="5" height="3.6" rx="1.4" fill="currentColor"/><rect x="9.5" y="6" width="5" height="3.6" rx="1.4" fill="currentColor"/><rect x="15.5" y="14.5" width="5" height="3.6" rx="1.4" fill="currentColor"/>',
+  routing: '<circle cx="5" cy="6" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="12" r="2.2"/><path d="M7.2 6c5.6 0 4.6 6 9.6 6M7.2 18c5.6 0 4.6-6 9.6-6"/>',
+  light: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  scenes: '<path d="M12 3l9 4.8-9 4.8-9-4.8z"/><path d="M3 12.2l9 4.8 9-4.8M3 16.4l9 4.8 9-4.8"/>',
+  more: '<circle cx="5.5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor"/>',
+  chev: '<path d="M7 9.5l5 5 5-5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  speaker: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.3 6.5a8 8 0 0 1 0 11"/>',
+  speakerOff: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  micOff: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7M3.5 3.5l17 17"/>',
+  wand: '<path d="M4 20L15 9M13 7l2-2 4 4-2 2z"/><path d="M8 3.5v3M6.5 5h3M19 14.5v3M17.5 16h3"/>',
+  radar: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+  leaf: '<path d="M5 19.5C5 10.5 10.5 5 20 4.5 19.5 14 14 19.5 5 19.5z"/><path d="M5 19.5L13 11.5"/>',
+  radio: '<rect x="3" y="9" width="18" height="12" rx="2.4"/><path d="M7 9l10-5"/><circle cx="8.5" cy="15" r="2.3"/><path d="M14.5 13.5h3.5M14.5 16.5h3.5"/>',
+  shield: '<path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/><path d="M8.5 12.2l2.4 2.4 4.6-4.6"/>',
+  circle: '<circle cx="12" cy="12" r="8"/>',
+  save: '<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>',
+  upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 15v4.5h14V15"/>',
+  download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 15v4.5h14V15"/>',
+  reset: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01" stroke-width="2.2"/>',
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2h.01" stroke-width="2.2"/>',
+  ok: '<circle cx="12" cy="12" r="8.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  refresh: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3L19.5 9"/><path d="M19.5 4.5V9H15"/>',
+  github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>'
+};
+var LABELS = {Mic:"Micro", LineIn:"Entrée ligne", Console:"Console", System:"Système", Game:"Jeu", Chat:"Chat", Sample:"Samples", Music:"Musique", Headphones:"Casque", MicMonitor:"Retour micro", LineOut:"Sortie ligne"};
+var IN_MAP = {Microphone:"Mic", LineIn:"LineIn", Console:"Console", System:"System", Game:"Game", Chat:"Chat", Music:"Music", Samples:"Sample"};
+var OUT_LABELS = {Headphones:"Casque", BroadcastMix:"Stream", ChatMic:"Discord / chat", Sampler:"VOD", LineOut:"Enceintes", StreamMix2:"Stream 2"};
+var OUT_HINT = {Headphones:"Ce que tu entends", BroadcastMix:"Ce que ton stream entend", ChatMic:"Ce que tes amis entendent", Sampler:"Ce qui est enregistré en VOD", LineOut:"Sortie ligne", StreamMix2:"Second mix"};
+var MUTE_LABELS = {all: "Partout", stream: "Stream", chat: "Discord", phones: "Casque", lineout: "Enceintes"};
+var MUTE_VERB = {all: "Couper", stream: "Couper du stream", chat: "Couper de Discord", phones: "Couper du casque", lineout: "Couper des enceintes"};
+var MUTED_TXT = {all: "Coupé", stream: "Coupé du stream", chat: "Coupé de Discord", phones: "Coupé du casque", lineout: "Coupé des enceintes"};
+var MIC_MODES = [["toggle", "Bascule"], ["hold", "Maintenir = coupé"], ["ptt", "Maintenir = parler"]];
+var MIC_TYPE_LABELS = {dynamic:"Dynamique", condenser:"Statique +48 V", jack:"Jack 3,5 mm"};
+var PRESET_ICONS = {naturel:"leaf", radio:"radio", stream:"BroadcastMix", podcast:"Mic", "anti-bruit":"shield", brut:"circle"};
+var PRESET_COLOURS = {naturel:"#30D158", radio:"#FF9F0A", stream:"#BF5AF2", podcast:"#FF375F", "anti-bruit":"#64D2FF", brut:"#8E8E93"};
+var SCENE_ICONS = {streaming:"BroadcastMix", "stream-safe":"shield", gaming:"Game", discord:"Chat", podcast:"Mic", ecoute:"Headphones"};
+var SCENE_COLOURS = {streaming:"#BF5AF2", "stream-safe":"#30D158", gaming:"#30D158", discord:"#5E5CE6", podcast:"#FF375F", ecoute:"#FF9F0A"};
+var ANIM_LABELS = {"none":"Aucune", "retro-rainbow":"Arc-en-ciel rétro", "rainbow-dark":"Arc-en-ciel doux", "rainbow-bright":"Arc-en-ciel vif", "simple":"Respiration", "ripple":"Ondulation"};
+var STYLE_LABELS = {"two-colour":"Deux couleurs", "gradient":"Dégradé", "meter":"Vumètre", "gradient-meter":"Dégradé + vumètre"};
+var PALETTE = ["FF453A","FF9F0A","FFD60A","30D158","63E6BE","64D2FF","0A84FF","5E5CE6","BF5AF2","FF375F","FF6482","AC8E68","FFFFFF","D1D1D6","8E8E93","00E5FF","FF00E5","7B61FF"];
+var RATIO_LABEL = function (i) { var r = S ? S.meta.ratios[i] : 1; return (r >= 10 ? r.toFixed(0) : r.toFixed(1)).replace(".", ",") + ":1"; };
+
+var S = null, L = null, V = 0, page = "mixer", built = {}, metaKey = "";
+var pending = 0;
+
+function $(id) { return document.getElementById(id); }
+function svg(name, extra) {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"' + (extra || "") + '>' + (ICONS[name] || "") + '</svg>';
+}
+function h(tag, attrs, html) {
+  var e = document.createElement(tag);
+  if (attrs) for (var k in attrs) {
+    if (k === "style") e.style.cssText = attrs[k];
+    else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (html != null) e.innerHTML = html;
+  return e;
+}
+function chipIco(name, colour) { return '<span class="chip-ico" style="--c:' + colour + '">' + svg(name) + '</span>'; }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]; }); }
+function muteState(ch) { return S.state.mutes[ch] ? "all" : (S.state.partial[ch] || null); }
+function hasInput(ch) { return !!S.meta.channel_inputs[ch]; }
+function setMute(ch, muted, target) {
+  target = target || "all";
+  if (!muted) { S.state.mutes[ch] = false; S.state.partial[ch] = null; }
+  else if (target === "all" || !hasInput(ch)) { S.state.mutes[ch] = true; S.state.partial[ch] = null; }
+  else { S.state.mutes[ch] = false; S.state.partial[ch] = target; }
+  render();
+  return post("mute", {channel: ch, muted: muted, target: target});
+}
+function toggleMute(ch, target) { return setMute(ch, !muteState(ch), target); }
+function col(ch) { return "#" + (S ? S.meta.channel_colours[ch] : "8E8E93"); }
+function pct(v) { return Math.round(v * 100 / 255); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function darken(hex, f) {
+  var v = parseInt(hex, 16), r = Math.round(((v >> 16) & 255) * f), g = Math.round(((v >> 8) & 255) * f), b = Math.round((v & 255) * f);
+  return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+function throttle(fn, ms) {
+  var last = 0, timer = null, args = null;
+  return function () {
+    args = arguments; var now = Date.now();
+    clearTimeout(timer);
+    if (now - last >= ms) { last = now; fn.apply(null, args); }
+    else timer = setTimeout(function () { last = Date.now(); fn.apply(null, args); }, ms - (now - last));
+  };
+}
+
+/* ---------- API ---------- */
+function api(path) { return fetch(path, {cache: "no-store"}).then(function (r) { return r.json(); }); }
+function post(action, body) {
+  pending++;
+  return fetch("/api/" + action, {method: "POST", headers: {"Content-Type": "application/json", "X-GoXLR": "1"}, body: JSON.stringify(body || {})})
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) { toast(j.error || "Action impossible"); setTimeout(refresh, 50); } return j; }); })
+    .catch(function () { toast("Le moteur GoXLR ne répond pas"); })
+    .finally(function () { pending--; });
+}
+function refresh() {
+  return api("/api/state").then(function (s) { S = s; V = s.v; render(); });
+}
+var liveChanged = true, liveKey = "", bootId = null;
+function liveLoop() {
+  api("/api/live?level=1").then(function (l) {
+    if (bootId && l.boot && l.boot !== bootId) { location.reload(); return; }
+    bootId = l.boot || bootId;
+    L = l; setOnline(true, l.connected, l.health);
+    var k = l.live.fader_positions.join() + "|" + l.live.pressed.join() + "|" + l.live.mic_db;
+    if (k !== liveKey) { liveKey = k; liveChanged = true; }
+    if (l.v !== V && !pending) return refresh();
+  }).catch(function () { setOnline(false, false); })
+    .finally(function () { setTimeout(liveLoop, document.hidden ? 1000 : 50); });
+}
+
+/* ---------- curseur generique ---------- */
+function Slider(o) {
+  var el = h("div", {"class": "sl " + (o.vertical ? "v" : "h")});
+  var track = h("div", {"class": "sl-track"}), fill = h("div", {"class": "sl-fill"}), knob = h("div", {"class": "sl-knob"});
+  track.appendChild(fill); track.appendChild(knob); el.appendChild(track);
+  var value = o.value != null ? o.value : o.min, dragging = false, lockUntil = 0;
+  function frac(v) { return (v - o.min) / (o.max - o.min); }
+  function paint() {
+    var p = (o.center != null ? frac(value) : frac(value)) * 100;
+    if (o.vertical) { fill.style.height = p + "%"; knob.style.bottom = p + "%"; }
+    else { fill.style.width = p + "%"; knob.style.left = p + "%"; }
+  }
+  function fromEvent(e) {
+    var r = track.getBoundingClientRect();
+    var f = o.vertical ? 1 - (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
+    f = clamp(f, 0, 1);
+    return clamp(Math.round((o.min + f * (o.max - o.min)) / o.step) * o.step, o.min, o.max);
+  }
+  function setLocal(v, commit) {
+    v = clamp(v, o.min, o.max);
+    lockUntil = performance.now() + 900;
+    if (v !== value) { value = v; paint(); if (o.onInput) o.onInput(v); }
+    if (commit && o.onCommit) o.onCommit(v);
+  }
+  track.addEventListener("pointerdown", function (e) { dragging = true; track.setPointerCapture(e.pointerId); el.classList.add("active"); setLocal(fromEvent(e)); });
+  track.addEventListener("pointermove", function (e) { if (dragging) setLocal(fromEvent(e)); });
+  function end() { if (!dragging) return; dragging = false; el.classList.remove("active"); setLocal(value, true); }
+  track.addEventListener("pointerup", end); track.addEventListener("pointercancel", end);
+  el.addEventListener("wheel", function (e) { e.preventDefault(); setLocal(value + (e.deltaY < 0 ? 1 : -1) * (o.wheel || o.step), true); }, {passive: false});
+  if (o.colour) el.style.setProperty("--c", o.colour);
+  paint();
+  return {
+    el: el, track: track,
+    set: function (v) { if (dragging || performance.now() < lockUntil) return; if (v !== value) { value = v; paint(); } },
+    colour: function (c) { el.style.setProperty("--c", c); },
+    get value() { return value; },
+    busy: function () { return dragging || performance.now() < lockUntil; }
+  };
+}
+
+/* ---------- popover, toast, feuille ---------- */
+var popEl = null, popAnchor = null;
+function openPop(anchor, content, place) {
+  closePop();
+  popEl = h("div", {"class": "pop"});
+  popEl.appendChild(content);
+  document.body.appendChild(popEl);
+  var r = anchor.getBoundingClientRect(), pw = popEl.offsetWidth, ph = popEl.offsetHeight;
+  var x = r.left, y = r.bottom + 8;
+  if (place === "up-left") { x = r.right - pw; y = r.top - ph - 10; popEl.style.transformOrigin = "bottom right"; }
+  x = clamp(x, 10, innerWidth - pw - 10); y = clamp(y, 10, innerHeight - ph - 10);
+  popEl.style.left = x + "px"; popEl.style.top = y + "px";
+  popAnchor = anchor;
+  requestAnimationFrame(function () { popEl && popEl.classList.add("on"); });
+}
+function closePop() {
+  if (!popEl) return;
+  var p = popEl; popEl = null; popAnchor = null;
+  p.classList.remove("on"); setTimeout(function () { p.remove(); }, 180);
+}
+document.addEventListener("pointerdown", function (e) {
+  if (popEl && !popEl.contains(e.target) && !(popAnchor && popAnchor.contains(e.target))) closePop();
+});
+var toastTimer = null;
+function toast(msg, actionLabel, action) {
+  var t = $("toast");
+  t.innerHTML = "<span></span>";
+  t.firstChild.textContent = msg;
+  if (actionLabel) {
+    var b = h("button", {onclick: function () { t.classList.remove("on"); action(); }}, actionLabel);
+    t.appendChild(b);
+  }
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("on"); }, actionLabel ? 6000 : 3200);
+}
+function withUndo(msg, fn) {
+  var before = JSON.parse(JSON.stringify(S.state));
+  return fn().then(function () { toast(msg, "Annuler", function () { post("profile", before).then(refresh); }); });
+}
+
+/* ---------- navigation ---------- */
+var PAGES = {
+  mixer: {title: "Mixeur", sub: "Tes quatre faders et toutes les voies, en direct."},
+  mic: {title: "Micro", sub: "Détection, gain et traitement de ta voix."},
+  routing: {title: "Routage", sub: "Choisis qui entend quoi : toi, ton stream et tes amis."},
+  light: {title: "Éclairage", sub: "Couleurs, thèmes et animations de l'appareil."},
+  scenes: {title: "Scènes", sub: "Des configurations complètes en un clic, et des conseils."}
+};
+function go(p) {
+  page = p; closePop();
+  document.querySelectorAll("nav button").forEach(function (b) { b.classList.toggle("on", b.dataset.p === p); });
+  document.querySelectorAll(".page").forEach(function (e) { e.classList.toggle("on", e.id === "p-" + p); });
+  $("h-title").textContent = PAGES[p].title; $("h-sub").textContent = PAGES[p].sub;
+  render();
+}
+var HEALTH_TXT = {
+  absent: ["warn", "GoXLR éteinte ou débranchée. Elle sera reprise toute seule dès qu’elle revient."],
+  error: ["warn", "Connexion à la GoXLR impossible pour l’instant. Nouvel essai automatique…"],
+  blocked: ["", "Le pilote USB ne répond plus. Le moteur se relance tout seul dans quelques secondes…"],
+  starting: ["info", "Recherche de la GoXLR…"]
+};
+function setOnline(daemon, dev, health) {
+  var o = $("offline");
+  var msg = null, kind = "";
+  if (!daemon) msg = "Le moteur GoXLR ne répond pas. Relance automatique en cours…";
+  else if (health && health !== "ok" && HEALTH_TXT[health]) { kind = HEALTH_TXT[health][0]; msg = HEALTH_TXT[health][1]; }
+  else if (!dev) msg = "GoXLR déconnectée. Reconnexion automatique dès qu’elle revient…";
+  o.classList.toggle("on", !!msg);
+  o.classList.toggle("warn", kind === "warn");
+  o.classList.toggle("info", kind === "info");
+  if (msg && $("offline-txt").textContent !== msg) $("offline-txt").textContent = msg;
+  var ok = daemon && dev && (!health || health === "ok");
+  $("conn-dot").classList.toggle("ok", ok);
+  $("conn-txt").textContent = !daemon ? "Moteur arrêté" : ok ? "Connectée" : health === "absent" ? "Débranchée" : health === "blocked" ? "Pilote bloqué" : dev ? "Connectée" : "Reconnexion…";
+}
+
+/* ---------- mixeur ---------- */
+var strips = {}, others = {};
+var sendVolume = {};
+function volumeSender(ch) {
+  if (!sendVolume[ch]) sendVolume[ch] = throttle(function (v) { post("volume", {channel: ch, value: v}); }, 45);
+  return sendVolume[ch];
+}
+function buildMixer() {
+  var root = $("p-mixer"); root.innerHTML = "";
+  var grid = h("div", {"class": "strips"});
+  S.meta.faders.forEach(function (f, i) {
+    var st = h("div", {"class": "strip"});
+    st.innerHTML = '<span class="fnum">FADER ' + (i + 1) + '</span>';
+    var head = h("button", {"class": "strip-head", title: "Changer la voie de ce fader"});
+    var sl = Slider({vertical: true, min: 0, max: 255, step: 1, wheel: 5,
+      onInput: function (v) { var ch = S.state.faders[f]; S.state.volumes[ch] = v; volumeSender(ch)(v); paintStripVal(f); },
+      onCommit: function (v) { post("volume", {channel: S.state.faders[f], value: v}); }});
+    var ghost = h("div", {"class": "ghost"}); sl.track.appendChild(ghost);
+    var note = h("div", {"class": "phys-note"});
+    var val = h("div", {"class": "val"});
+    var mute = h("button", {"class": "mute-btn"});
+    mute.title = "Clic droit : couper partout (comme un appui long sur le bouton de l’appareil)";
+    mute.addEventListener("click", function () { toggleMute(S.state.faders[f], S.state.mute_modes[f]); });
+    mute.addEventListener("contextmenu", function (e) { e.preventDefault(); var ch = S.state.faders[f]; if (muteState(ch) !== "all") setMute(ch, true, "all"); });
+    head.addEventListener("click", function () { openPop(head, channelPicker(f)); });
+    st.appendChild(head); st.appendChild(sl.el); st.appendChild(note); st.appendChild(val); st.appendChild(mute);
+    grid.appendChild(st);
+    strips[f] = {el: st, head: head, sl: sl, ghost: ghost, note: note, val: val, mute: mute};
+  });
+  root.appendChild(grid);
+  var card = h("div", {"class": "card others"});
+  root.appendChild(card);
+  others.card = card;
+  built.mixer = true;
+}
+function channelPicker(f) {
+  var box = h("div");
+  box.appendChild(h("div", {"class": "ptitle"}, "Voie du fader " + (S.meta.faders.indexOf(f) + 1)));
+  var g = h("div", {"class": "grid"});
+  S.meta.channels.forEach(function (ch) {
+    var where = S.meta.faders.filter(function (k) { return S.state.faders[k] === ch; })[0];
+    var t = h("button", {"class": "tile" + (S.state.faders[f] === ch ? " cur" : "")},
+      chipIco(ch, col(ch)) + LABELS[ch] + (where && where !== f ? "<em>F" + (S.meta.faders.indexOf(where) + 1) + "</em>" : ""));
+    t.addEventListener("click", function () {
+      closePop();
+      if (S.state.faders[f] === ch) return;
+      var old = S.state.faders[f];
+      if (where) S.state.faders[where] = old;
+      S.state.faders[f] = ch; render();
+      post("fader", {fader: f, channel: ch}).then(refresh);
+    });
+    g.appendChild(t);
+  });
+  box.appendChild(g);
+  var i = S.meta.faders.indexOf(f);
+  box.appendChild(h("div", {"class": "ptitle", style: "margin-top:6px"}, "Bouton mute de ce fader"));
+  var mc = h("div", {"class": "mode-chips"});
+  S.meta.mute_targets.forEach(function (t) {
+    var b = h("button", {"class": S.state.mute_modes[f] === t ? "on" : ""}, MUTE_LABELS[t]);
+    b.addEventListener("click", function () {
+      var m = {}; m[f] = t; S.state.mute_modes[f] = t; closePop(); render();
+      post("settings", {mute_modes: m});
+      toast("Bouton " + (i + 1) + " : " + MUTE_VERB[t].toLowerCase() + (t === "all" ? "" : " · appui long pour couper partout"));
+    });
+    mc.appendChild(b);
+  });
+  box.appendChild(mc);
+  box.appendChild(h("div", {"class": "hint"}, "Appui court : selon ce choix. Appui long : coupe partout et fait clignoter le bouton."));
+  return box;
+}
+function paintStripVal(f) {
+  var s = strips[f], ch = S.state.faders[f];
+  s.val.innerHTML = pct(S.state.volumes[ch]) + "<span>%</span>";
+}
+function paintStrip(f) {
+  var s = strips[f], ch = S.state.faders[f], ms = muteState(ch), mode = S.state.mute_modes[f];
+  var key = ch + "|" + ms + "|" + mode;
+  if (s.key !== key) {
+    s.head.innerHTML = chipIco(ch, col(ch)) + '<span class="nm">' + LABELS[ch] + '<small>Fader ' + (S.meta.faders.indexOf(f) + 1) + ' · ' + (ms ? MUTED_TXT[ms].toLowerCase() : "actif") + '</small></span>' + svg("chev", ' class="chev"');
+    s.mute.innerHTML = svg(ms ? "speakerOff" : "speaker") + (ms ? MUTED_TXT[ms] : (hasInput(ch) ? MUTE_VERB[mode] : "Couper"));
+    s.mute.classList.toggle("on", ms === "all");
+    s.mute.classList.toggle("part", !!ms && ms !== "all");
+    s.el.classList.toggle("is-muted", ms === "all");
+    s.el.classList.toggle("is-part", !!ms && ms !== "all");
+    s.sl.colour(col(ch));
+    s.key = key;
+  }
+  s.sl.set(S.state.volumes[ch]);
+  paintStripVal(f);
+}
+function renderOthers() {
+  var onF = S.meta.faders.map(function (f) { return S.state.faders[f]; });
+  var list = S.meta.channels.filter(function (c) { return onF.indexOf(c) < 0; });
+  var key = list.join(",");
+  if (others.key !== key) {
+    others.card.innerHTML = "";
+    others.rows = {};
+    list.forEach(function (ch) {
+      var row = h("div", {"class": "orow"});
+      row.innerHTML = chipIco(ch, col(ch)) + '<span class="nm">' + LABELS[ch] + '</span>';
+      var sl = Slider({min: 0, max: 255, step: 1, wheel: 5, colour: col(ch),
+        onInput: function (v) { S.state.volumes[ch] = v; volumeSender(ch)(v); p.textContent = pct(v) + " %"; },
+        onCommit: function (v) { post("volume", {channel: ch, value: v}); }});
+      var p = h("span", {"class": "pct"});
+      var m = h("button", {"class": "ibtn", title: "Couper partout"});
+      m.addEventListener("click", function () { toggleMute(ch, "all"); });
+      row.appendChild(sl.el); row.appendChild(p); row.appendChild(m);
+      others.card.appendChild(row);
+      others.rows[ch] = {sl: sl, p: p, m: m};
+    });
+    others.key = key;
+  }
+  list.forEach(function (ch) {
+    var r = others.rows[ch], ms = muteState(ch);
+    r.sl.set(S.state.volumes[ch]);
+    if (!r.sl.busy()) r.p.textContent = pct(S.state.volumes[ch]) + " %";
+    r.m.innerHTML = svg(ms ? "speakerOff" : "speaker");
+    r.m.classList.toggle("on", ms === "all");
+    r.m.classList.toggle("part", !!ms && ms !== "all");
+    r.m.title = ms ? MUTED_TXT[ms] + " · cliquer pour réactiver" : "Couper partout";
+  });
+}
+function renderMixer() {
+  if (!built.mixer) buildMixer();
+  S.meta.faders.forEach(paintStrip);
+  renderOthers();
+  liveMixer();
+}
+function liveMixer() {
+  if (!L || !built.mixer) return;
+  S.meta.faders.forEach(function (f, i) {
+    var s = strips[f], pos = L.live.fader_positions[i], ch = S.state.faders[f];
+    if (pos == null) { s.ghost.classList.remove("show"); s.note.classList.remove("show"); return; }
+    var off = Math.abs(pos - S.state.volumes[ch]) > 8 && !s.sl.busy();
+    s.ghost.style.bottom = (pos / 255 * 100) + "%";
+    s.ghost.classList.toggle("show", off);
+    s.note.classList.toggle("show", off);
+    if (off) s.note.textContent = "Fader physique à " + pct(pos) + " %";
+  });
+}
+
+/* ---------- micro ---------- */
+var mic = {};
+function buildMic() {
+  var root = $("p-mic"); root.innerHTML = "";
+  var grid = h("div", {"class": "mic-grid"});
+  var left = h("div", {style: "display:flex;flex-direction:column;gap:16px"});
+  var inCard = h("div", {"class": "card"});
+  inCard.innerHTML = '<h3>' + svg("Mic", ' style="width:16px;height:16px;color:#FF453A"') + 'Entrée micro<small id="mic-state"></small></h3>';
+  var meter = h("div", {"class": "meter"});
+  for (var i = 0; i < 34; i++) meter.appendChild(h("i"));
+  var db = h("div", {"class": "meter-db"}, '<span><b id="mic-db">—</b><span class="clip" id="mic-clip">SATURE</span></span><span>-72 dB · 0 dB</span>');
+  inCard.appendChild(meter); inCard.appendChild(db);
+  var typeField = h("div", {"class": "field"}, '<div class="field-top">Type de micro</div>');
+  var seg = h("div", {"class": "seg"});
+  S.meta.mic_types.forEach(function (t) {
+    var b = h("button", {"data-t": t}, MIC_TYPE_LABELS[t]);
+    b.addEventListener("click", function () {
+      if (t === "condenser" && S.state.mic.type !== "condenser") toast("Alimentation fantôme 48 V activée pour le micro statique");
+      post("mic", {type: t, suggest_gain: true}).then(refresh);
+    });
+    seg.appendChild(b);
+  });
+  typeField.appendChild(seg);
+  inCard.appendChild(typeField);
+  var gainField = h("div", {"class": "field"}, '<div class="field-top">Gain<span id="gain-val"></span></div>');
+  var gainSend = throttle(function (v) { post("mic", {gain_db: v}); }, 60);
+  mic.gain = Slider({min: 0, max: 72, step: 1, colour: "#FF453A", onInput: function (v) { S.state.mic.gain_db = v; $("gain-val").textContent = v + " dB"; gainSend(v); }, onCommit: function (v) { post("mic", {gain_db: v}); }});
+  gainField.appendChild(mic.gain.el);
+  inCard.appendChild(gainField);
+  var row = h("div", {"class": "btn-row"});
+  row.appendChild(h("button", {"class": "pill", onclick: function () { startJob("detect-mic", {}); }}, svg("radar") + "Détecter"));
+  row.appendChild(h("button", {"class": "pill primary", onclick: function () { startJob("auto-gain", {}); }}, svg("wand") + "Gain auto"));
+  inCard.appendChild(row);
+  left.appendChild(inCard);
+  var muteCard = h("div", {"class": "card"});
+  var ms = h("div", {"class": "row-switch", style: "padding-top:0"}, '<div><b>Micro coupé</b><small id="mic-mute-sub">Coupé partout : personne ne t\u2019entend.</small></div>');
+  mic.muteSw = h("button", {"class": "switch"});
+  mic.muteSw.addEventListener("click", function () { toggleMute("Mic", "all"); });
+  ms.appendChild(mic.muteSw); muteCard.appendChild(ms);
+  var mbf = h("div", {"class": "field", style: "margin-top:8px"}, '<div class="field-top">Bouton micro de l\u2019appareil</div>');
+  mic.mbSeg = h("div", {"class": "seg"});
+  MIC_MODES.forEach(function (m) {
+    var b = h("button", {"data-m": m[0]}, m[1]);
+    b.addEventListener("click", function () {
+      S.state.mic_button.mode = m[0]; renderMic();
+      post("settings", {mic_button: {mode: m[0]}}).then(refresh);
+      if (m[0] === "ptt") toast("Micro coupé au repos : garde le bouton appuyé pour parler");
+    });
+    mic.mbSeg.appendChild(b);
+  });
+  mbf.appendChild(mic.mbSeg);
+  var tgRow = h("div", {style: "display:flex;align-items:center;gap:10px;margin-top:10px"}, '<span class="muted-txt" style="font-size:12px;white-space:nowrap">Il coupe</span>');
+  mic.mbTarget = h("div", {"class": "chips"});
+  [["all", "Partout"], ["stream", "Du stream"], ["chat", "De Discord"]].forEach(function (t) {
+    var b = h("button", {"data-t": t[0]}, t[1]);
+    b.addEventListener("click", function () { S.state.mic_button.target = t[0]; renderMic(); post("settings", {mic_button: {target: t[0]}}).then(refresh); });
+    mic.mbTarget.appendChild(b);
+  });
+  tgRow.appendChild(mic.mbTarget);
+  mbf.appendChild(tgRow);
+  var bl = h("div", {"class": "row-switch", style: "padding-bottom:0"}, '<div><b>Clignoter quand il est coupé</b><small>Impossible d\u2019oublier que tu es muet.</small></div>');
+  mic.blinkSw = h("button", {"class": "switch"});
+  mic.blinkSw.addEventListener("click", function () { var v = !S.state.mic_button.blink; S.state.mic_button.blink = v; renderMic(); post("settings", {mic_button: {blink: v}}); });
+  bl.appendChild(mic.blinkSw); mbf.appendChild(bl);
+  muteCard.appendChild(mbf);
+  var mon = h("div", {"class": "field"}, '<div class="field-top">Retour micro dans le casque<span id="mon-val"></span></div>');
+  mic.mon = Slider({min: 0, max: 255, step: 1, colour: "#FF6961", onInput: function (v) { S.state.volumes.MicMonitor = v; $("mon-val").textContent = pct(v) + " %"; volumeSender("MicMonitor")(v); }, onCommit: function (v) { post("volume", {channel: "MicMonitor", value: v}); }});
+  mon.appendChild(mic.mon.el); muteCard.appendChild(mon);
+  left.appendChild(muteCard);
+  grid.appendChild(left);
+
+  var right = h("div", {style: "display:flex;flex-direction:column;gap:16px;min-width:0"});
+  var pc = h("div", {"class": "card"}, '<h3>Préréglages de voix<small id="preset-hint"></small></h3>');
+  var pg = h("div", {"class": "presets"});
+  mic.presetBtns = {};
+  Object.keys(S.meta.mic_presets).forEach(function (k) {
+    var p = S.meta.mic_presets[k];
+    var b = h("button", {"class": "preset"}, chipIco(PRESET_ICONS[k], PRESET_COLOURS[k]) + "<b>" + frLabel(p.label) + "</b><p>" + frLabel(p.desc) + "</p>");
+    b.addEventListener("click", function () { withUndo("Préréglage " + frLabel(p.label) + " appliqué", function () { return post("mic-preset", {name: k}).then(refresh); }); });
+    pg.appendChild(b); mic.presetBtns[k] = b;
+  });
+  pc.appendChild(pg);
+  pc.appendChild(h("p", {id: "preset-tip", "class": "muted-txt", style: "margin-top:12px;font-size:12px;line-height:1.45"}));
+  right.appendChild(pc);
+
+  var fine = h("div", {"class": "card", style: "flex:1"});
+  var tabs = h("div", {"class": "tabs"});
+  var panes = h("div");
+  mic.tabs = {};
+  [["eq", "Égaliseur"], ["gate", "Noise gate"], ["comp", "Compresseur"], ["more", "De-esser & bip"]].forEach(function (t, i) {
+    var b = h("button", {}, t[1]);
+    b.addEventListener("click", function () { showTab(t[0]); });
+    tabs.appendChild(b); mic.tabs[t[0]] = {btn: b};
+  });
+  fine.appendChild(tabs); fine.appendChild(panes);
+  // egaliseur
+  var eq = h("div", {"class": "eq"});
+  var cv = h("canvas"); eq.appendChild(cv); mic.eqCanvas = cv;
+  var bands = h("div", {"class": "eq-bands"});
+  mic.eq = {};
+  var dspSend = throttle(function (patch) { post("dsp", patch); }, 80);
+  S.meta.eq_bands.forEach(function (b) {
+    var wrap = h("div", {"class": "eq-band"});
+    var lab = h("b");
+    var sl = Slider({vertical: true, min: -9, max: 9, step: 1, onInput: function (v) { S.state.dsp.eq[b] = v; lab.textContent = (v > 0 ? "+" : "") + v + " dB"; drawEq(); var p = {eq: {}}; p.eq[b] = v; dspSend(p); }});
+    wrap.appendChild(lab); wrap.appendChild(sl.el);
+    wrap.appendChild(h("small", {}, (+b >= 1000 ? (+b / 1000) + " kHz" : b + " Hz")));
+    bands.appendChild(wrap); mic.eq[b] = {sl: sl, lab: lab};
+  });
+  eq.appendChild(bands);
+  mic.tabs.eq.pane = eq;
+  // gate
+  var gate = h("div");
+  var gs = h("div", {"class": "row-switch"}, '<div><b>Noise gate</b><small>Coupe le micro quand tu ne parles pas : fini le clavier et le ventilateur.</small></div>');
+  mic.gateSw = h("button", {"class": "switch"});
+  mic.gateSw.addEventListener("click", function () { S.state.dsp.gate.enabled = !S.state.dsp.gate.enabled; renderMic(); post("dsp", {gate: {enabled: S.state.dsp.gate.enabled}}); });
+  gs.appendChild(mic.gateSw); gate.appendChild(gs);
+  mic.gateThr = fineSlider(gate, "Seuil", -59, 0, function (v) { return v + " dB"; }, function (v) { S.state.dsp.gate.threshold = v; dspSend({gate: {threshold: v}}); });
+  mic.gateAtt = fineSlider(gate, "Réduction", 0, 100, function (v) { return v + " %"; }, function (v) { S.state.dsp.gate.attenuation = v; dspSend({gate: {attenuation: v}}); });
+  mic.tabs.gate.pane = gate;
+  // compresseur
+  var comp = h("div");
+  comp.appendChild(h("p", {"class": "muted-txt", style: "margin-bottom:6px"}, "Égalise ta voix : les passages forts sont adoucis, les faibles remontés."));
+  mic.compThr = fineSlider(comp, "Seuil", -40, 0, function (v) { return v + " dB"; }, function (v) { S.state.dsp.comp.threshold = v; dspSend({comp: {threshold: v}}); });
+  mic.compRatio = fineSlider(comp, "Ratio", 0, 14, RATIO_LABEL, function (v) { S.state.dsp.comp.ratio = v; dspSend({comp: {ratio: v}}); });
+  mic.compMake = fineSlider(comp, "Gain de compensation", -6, 24, function (v) { return (v > 0 ? "+" : "") + v + " dB"; }, function (v) { S.state.dsp.comp.makeup = v; dspSend({comp: {makeup: v}}); });
+  mic.tabs.comp.pane = comp;
+  // de-esser et bip
+  var more = h("div");
+  mic.deess = fineSlider(more, "De-esser (adoucit les « s »)", 0, 100, function (v) { return v + " %"; }, function (v) { S.state.dsp.deesser = v; dspSend({deesser: v}); });
+  mic.bleep = fineSlider(more, "Volume du bip (bouton bleep)", -36, 0, function (v) { return v + " dB"; }, function (v) { S.state.bleep_db = v; dspSend({bleep_db: v}); });
+  mic.tabs.more.pane = more;
+  ["eq", "gate", "comp", "more"].forEach(function (k) { panes.appendChild(mic.tabs[k].pane); });
+  right.appendChild(fine);
+  grid.appendChild(right);
+  root.appendChild(grid);
+  showTab(mic.tab || "eq");
+  built.mic = true;
+}
+function frLabel(s) { return s; }
+function fineSlider(parent, label, min, max, fmt, onInput) {
+  var f = h("div", {"class": "field"});
+  var top = h("div", {"class": "field-top"}, label);
+  var v = h("span"); top.appendChild(v); f.appendChild(top);
+  var sl = Slider({min: min, max: max, step: 1, colour: "var(--accent)", onInput: function (x) { v.textContent = fmt(x); onInput(x); }});
+  f.appendChild(sl.el); parent.appendChild(f);
+  return {set: function (x) { sl.set(x); if (!sl.busy()) v.textContent = fmt(x); }};
+}
+function showTab(k) {
+  mic.tab = k;
+  Object.keys(mic.tabs).forEach(function (t) { mic.tabs[t].btn.classList.toggle("on", t === k); mic.tabs[t].pane.style.display = t === k ? "" : "none"; });
+  if (k === "eq") requestAnimationFrame(drawEq);
+}
+function drawEq() {
+  var cv = mic.eqCanvas; if (!cv || !cv.offsetWidth) return;
+  var w = cv.offsetWidth, ht = cv.offsetHeight, dpr = devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = ht * dpr;
+  var c = cv.getContext("2d"); c.scale(dpr, dpr);
+  var bands = S.meta.eq_bands, top = 22, bot = ht - 30, mid = (top + bot) / 2;
+  var cr = cv.getBoundingClientRect(), tr = mic.eq[bands[0]].sl.track.getBoundingClientRect();
+  if (tr.height) { top = tr.top - cr.top; bot = tr.bottom - cr.top; mid = (top + bot) / 2; }
+  c.strokeStyle = "rgba(255,255,255,.06)"; c.lineWidth = 1;
+  [-9, 0, 9].forEach(function (g) { var y = mid - g / 9 * (bot - top) / 2; c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); });
+  var colW = w / bands.length;
+  function gainAt(x) {
+    var lf = Math.log(20) + (x / w) * (Math.log(16000) - Math.log(20)), sum = 0;
+    bands.forEach(function (b, i) {
+      var cx = (i + .5) * colW, lb = Math.log(20) + (cx / w) * (Math.log(16000) - Math.log(20));
+      var d = (lf - lb) / 0.55; sum += S.state.dsp.eq[b] * Math.exp(-d * d);
+    });
+    return clamp(sum, -12, 12);
+  }
+  var grad = c.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, "#5E5CE6"); grad.addColorStop(.5, "#0A84FF"); grad.addColorStop(1, "#64D2FF");
+  c.beginPath();
+  for (var x = 0; x <= w; x += 3) { var y = mid - gainAt(x) / 9 * (bot - top) / 2; if (x === 0) c.moveTo(x, y); else c.lineTo(x, y); }
+  c.lineWidth = 2.5; c.strokeStyle = grad; c.shadowColor = "rgba(10,132,255,.6)"; c.shadowBlur = 12; c.stroke();
+  c.shadowBlur = 0; c.lineTo(w, mid); c.lineTo(0, mid); c.closePath();
+  var fg = c.createLinearGradient(0, top, 0, bot); fg.addColorStop(0, "rgba(10,132,255,.22)"); fg.addColorStop(.5, "rgba(10,132,255,.04)"); fg.addColorStop(1, "rgba(10,132,255,.22)");
+  c.fillStyle = fg; c.fill();
+}
+function renderMic() {
+  if (!built.mic) buildMic();
+  var st = S.state;
+  document.querySelectorAll("#p-mic .seg button").forEach(function (b) { b.classList.toggle("on", b.dataset.t === st.mic.type); });
+  mic.gain.set(st.mic.gain_db); if (!mic.gain.busy()) $("gain-val").textContent = st.mic.gain_db + " dB";
+  var mms = muteState("Mic");
+  mic.muteSw.classList.toggle("on", mms === "all");
+  $("mic-mute-sub").textContent = mms === "all" ? "Coupé partout : personne ne t\u2019entend." : mms ? MUTED_TXT[mms] + " : les autres t\u2019entendent encore." : "Actif. Le bouton de l\u2019appareil fait pareil.";
+  mic.mbSeg.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.m === st.mic_button.mode); });
+  mic.mbTarget.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.t === st.mic_button.target); });
+  mic.blinkSw.classList.toggle("on", !!st.mic_button.blink);
+  mic.mon.set(st.volumes.MicMonitor); if (!mic.mon.busy()) $("mon-val").textContent = pct(st.volumes.MicMonitor) + " %";
+  var rec = S.meta.mic_type_preset[st.mic.type];
+  Object.keys(mic.presetBtns).forEach(function (k) {
+    var b = mic.presetBtns[k]; b.classList.toggle("on", st.mic_preset === k);
+    var tag = b.querySelector(".tag");
+    if (k === rec && !tag) b.appendChild(h("span", {"class": "tag"}, "CONSEILLÉ"));
+    if (k !== rec && tag) tag.remove();
+  });
+  $("preset-hint").textContent = st.mic_preset === "custom" ? "Réglage personnalisé" : "";
+  S.meta.eq_bands.forEach(function (b) { var e = mic.eq[b], v = st.dsp.eq[b]; e.sl.set(v); if (!e.sl.busy()) e.lab.textContent = (v > 0 ? "+" : "") + v + " dB"; });
+  mic.gateSw.classList.toggle("on", st.dsp.gate.enabled);
+  mic.gateThr.set(st.dsp.gate.threshold); mic.gateAtt.set(st.dsp.gate.attenuation);
+  mic.compThr.set(st.dsp.comp.threshold); mic.compRatio.set(st.dsp.comp.ratio); mic.compMake.set(st.dsp.comp.makeup);
+  mic.deess.set(st.dsp.deesser); mic.bleep.set(st.bleep_db);
+  $("mic-state").textContent = mms ? MUTED_TXT[mms] : MIC_TYPE_LABELS[st.mic.type];
+  var HINTS = {dynamic: "<b>Micro dynamique</b> (SM7B, PodMic…) : vise 45 à 60 dB de gain, puis lance le gain auto en parlant normalement.",
+    condenser: "<b>Micro statique</b> : il capte toute la pièce. Le préréglage Anti-bruit coupe le clavier et le ventilateur.",
+    jack: "<b>Micro de casque</b> : 20 à 30 dB suffisent souvent. Le préréglage Stream le rend plus clair."};
+  mic.hintTxt = HINTS[st.mic.type];
+  $("preset-hint").innerHTML = st.mic_preset === "custom" ? "Réglage personnalisé" : "";
+  var ph = $("preset-tip"); if (ph) ph.innerHTML = HINTS[st.mic.type];
+  if (mic.tab === "eq") drawEq();
+}
+var meterShown = -72.2, meterPeak = -72.2, peakT = 0, clipT = -1e9;
+function meterPaint(container, db) {
+  if (!container) return;
+  var bars = container.children, n = bars.length;
+  var lit = Math.round(clamp((db + 72.2) / 72.2, 0, 1) * n);
+  var peakIdx = Math.round(clamp((meterPeak + 72.2) / 72.2, 0, 1) * n) - 1;
+  var key = lit + "," + peakIdx;
+  if (container._k === key) return;
+  container._k = key;
+  for (var i = 0; i < n; i++) {
+    var f = i / n, c = f > .88 ? "#FF453A" : f > .72 ? "#FFD60A" : "#30D158";
+    bars[i].style.background = (i < lit || i === peakIdx && peakIdx > 0) ? c : "rgba(255,255,255,.07)";
+  }
+}
+
+/* ---------- routage ---------- */
+var rt = {};
+var SHORTCUTS = [
+  {t: "VOD sans musique", d: "Ta VOD reçoit le stream, sans la musique (anti-DMCA).", get: function (s) { return s.vod.mode === "no-music"; },
+   apply: function (on) { S.state.vod.mode = on ? "no-music" : "off"; return post("settings", {vod: {mode: S.state.vod.mode}}).then(refresh); }},
+  {t: "Musique hors du stream", d: "Anti-DMCA : la musique reste dans ton casque.", get: function (s) { return !s.routing.Music.BroadcastMix; }, set: function (on) { return [["Music", "BroadcastMix", !on]]; }},
+  {t: "Discord entend ta musique", d: "Partage ce que tu écoutes avec tes amis.", get: function (s) { return s.routing.Music.ChatMic; }, set: function (on) { return [["Music", "ChatMic", on]]; }},
+  {t: "Notifications hors du stream", d: "Les sons Windows ne passent pas en live.", get: function (s) { return !s.routing.System.BroadcastMix; }, set: function (on) { return [["System", "BroadcastMix", !on]]; }},
+  {t: "Le stream entend Discord", d: "Tes viewers entendent tes amis.", get: function (s) { return s.routing.Chat.BroadcastMix; }, set: function (on) { return [["Chat", "BroadcastMix", on]]; }},
+  {t: "T'entendre dans le casque", d: "Retour de ta voix, réglable dans Micro.", get: function (s) { return s.routing.Microphone.Headphones; }, set: function (on) { return [["Microphone", "Headphones", on]]; }}
+];
+function buildRouting() {
+  var root = $("p-routing"); root.innerHTML = "";
+  var grid = h("div", {"class": "route-grid"});
+  var card = h("div", {"class": "card", style: "padding:20px 22px"});
+  var t = h("table", {"class": "mx"});
+  var head = "<tr><th></th>";
+  S.meta.outputs.forEach(function (o) { head += '<th title="' + OUT_HINT[o] + '">' + chipIco(o, "#8E8E93") + OUT_LABELS[o] + "</th>"; });
+  t.innerHTML = head + "</tr>";
+  rt.nodes = {};
+  S.meta.inputs.forEach(function (i) {
+    var ch = IN_MAP[i], tr = h("tr");
+    tr.appendChild(h("td", {}, '<span class="rname">' + chipIco(ch, col(ch)) + LABELS[ch] + "</span>"));
+    S.meta.outputs.forEach(function (o) {
+      var td = h("td"), n = h("button", {"class": "node", style: "--c:" + col(ch), title: LABELS[ch] + " → " + OUT_LABELS[o]}, svg("check", ' stroke-width="3"'));
+      n.addEventListener("click", function () {
+        if (vodAuto(o)) { toast("La VOD suit le stream sans la musique. Désactive « VOD sans musique » pour la régler à la main."); return; }
+        var v = !S.state.routing[i][o]; S.state.routing[i][o] = v; renderRouting(); post("route", {input: i, output: o, enabled: v});
+      });
+      td.appendChild(n); tr.appendChild(td); rt.nodes[i + "|" + o] = n;
+    });
+    t.appendChild(tr);
+  });
+  card.appendChild(t);
+  var lg = h("div", {"class": "legend"});
+  S.meta.outputs.forEach(function (o) { lg.appendChild(h("span", {}, "<b>" + OUT_LABELS[o] + "</b>" + OUT_HINT[o].charAt(0).toLowerCase() + OUT_HINT[o].slice(1))); });
+  card.appendChild(lg);
+  grid.appendChild(card);
+  var side = h("div", {"class": "card"}, "<h3>Raccourcis</h3>");
+  rt.sc = [];
+  SHORTCUTS.forEach(function (sc) {
+    var row = h("div", {"class": "row-switch"}, "<div><b>" + sc.t + "</b><small>" + sc.d + "</small></div>");
+    var sw = h("button", {"class": "switch"});
+    sw.addEventListener("click", function () {
+      var on = !sc.get(S.state);
+      if (sc.apply) { sc.apply(on); renderRouting(); return; }
+      sc.set(on).forEach(function (c) { S.state.routing[c[0]][c[1]] = c[2]; post("route", {input: c[0], output: c[1], enabled: c[2]}); });
+      renderRouting();
+    });
+    row.appendChild(sw); side.appendChild(row); rt.sc.push({sc: sc, sw: sw});
+  });
+  grid.appendChild(side);
+  root.appendChild(grid);
+  built.routing = true;
+}
+function renderRouting() {
+  if (!built.routing) buildRouting();
+  S.meta.inputs.forEach(function (i) {
+    S.meta.outputs.forEach(function (o) {
+      var n = rt.nodes[i + "|" + o], auto = vodAuto(o);
+      var on = auto ? (i !== "Music" && !!S.state.routing[i].BroadcastMix) : !!S.state.routing[i][o];
+      n.classList.toggle("on", on);
+      n.classList.toggle("auto", auto);
+    });
+  });
+  rt.sc.forEach(function (x) { x.sw.classList.toggle("on", !!x.sc.get(S.state)); });
+}
+function vodAuto(o) { return S.state.vod.mode === "no-music" && o === S.meta.vod_output; }
+
+/* ---------- eclairage ---------- */
+var lt = {};
+function buildLight() {
+  var root = $("p-light"); root.innerHTML = "";
+  var grid = h("div", {"class": "light-grid"});
+  var left = h("div", {style: "display:flex;flex-direction:column;gap:16px"});
+  var dev = h("div", {"class": "card device"}); lt.dev = dev; left.appendChild(dev);
+  var styleCard = h("div", {"class": "card"}, "<h3>Barres des faders</h3>");
+  lt.styles = h("div", {"class": "seg"});
+  S.meta.fader_styles.forEach(function (k) {
+    var b = h("button", {"data-k": k}, STYLE_LABELS[k]);
+    b.addEventListener("click", function () { S.meta.faders.forEach(function (f) { S.state.lighting.fader_style[f] = k; }); renderLight(); post("lighting", {fader_style: k}); });
+    lt.styles.appendChild(b);
+  });
+  styleCard.appendChild(lt.styles);
+  styleCard.appendChild(h("h3", {style: "margin-top:16px"}, "Animation"));
+  lt.anims = h("div", {"class": "chips"});
+  S.meta.animations.forEach(function (k) {
+    var b = h("button", {"data-k": k}, ANIM_LABELS[k] || k);
+    b.addEventListener("click", function () { S.state.lighting.animation = k; renderLight(); post("lighting", {animation: k}); });
+    lt.anims.appendChild(b);
+  });
+  styleCard.appendChild(lt.anims);
+  var animSend = throttle(function (p) { post("lighting", p); }, 120);
+  lt.mod1 = fineSlider(styleCard, "Amplitude", 0, 100, function (v) { return v + " %"; }, function (v) { S.state.lighting.mod1 = v; animSend({mod1: v}); });
+  lt.mod2 = fineSlider(styleCard, "Vitesse", 0, 100, function (v) { return v + " %"; }, function (v) { S.state.lighting.mod2 = v; animSend({mod2: v}); });
+  left.appendChild(styleCard);
+  grid.appendChild(left);
+  var right = h("div", {style: "display:flex;flex-direction:column;gap:16px;min-width:0"});
+  var th = h("div", {"class": "card"}, "<h3>Thèmes</h3>");
+  lt.themes = h("div", {"class": "themes"}); th.appendChild(lt.themes); right.appendChild(th);
+  var cu = h("div", {"class": "card", style: "flex:1"}, "<h3>Personnaliser<small>Clique une couleur pour la changer</small></h3>");
+  lt.custom = h("div"); cu.appendChild(lt.custom); right.appendChild(cu);
+  grid.appendChild(right);
+  root.appendChild(grid);
+  built.light = true;
+}
+function colourPop(anchor, current, onPick) {
+  var box = h("div");
+  var sws = h("div", {"class": "swatches"});
+  PALETTE.forEach(function (c) {
+    var b = h("button", {"class": "sw" + (c === current ? " cur" : ""), style: "--c:#" + c});
+    b.addEventListener("click", function () { closePop(); onPick(c); });
+    sws.appendChild(b);
+  });
+  box.appendChild(sws);
+  var cus = h("label", {"class": "sw-custom"}, "Autre couleur");
+  var inp = h("input", {type: "color", value: "#" + current.toLowerCase()});
+  inp.addEventListener("change", function () { closePop(); onPick(inp.value.slice(1).toUpperCase()); });
+  cus.appendChild(inp); box.appendChild(cus);
+  openPop(anchor, box);
+}
+function renderLight() {
+  if (!built.light) buildLight();
+  var st = S.state, li = st.lighting, c = st.colours;
+  lt.dev.innerHTML = deviceSvg();
+  lt.styles.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.k === li.fader_style.A); });
+  lt.anims.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.k === li.animation); });
+  lt.mod1.set(li.mod1); lt.mod2.set(li.mod2);
+  var key = JSON.stringify([li.theme, S.meta.themes]);
+  if (lt.themesKey !== key) {
+    lt.themes.innerHTML = "";
+    Object.keys(S.meta.themes).forEach(function (k) {
+      var t = S.meta.themes[k], b = h("button", {"class": "theme" + (li.theme === k ? " on" : "")});
+      b.innerHTML = '<div class="bars">' + t.preview.map(function (x) { return '<i style="background:linear-gradient(0deg,#' + darken(x, .25) + ',#' + x + ')"></i>'; }).join("") + "</div><b>" + frLabel(t.label) + "</b>";
+      b.addEventListener("click", function () { withUndo("Thème " + frLabel(t.label) + " appliqué", function () { return post("theme", {name: k}).then(refresh); }); });
+      lt.themes.appendChild(b);
+    });
+    lt.themesKey = key;
+  }
+  var ckey = JSON.stringify([c, st.faders]);
+  if (lt.customKey !== ckey) {
+    lt.custom.innerHTML = "";
+    S.meta.faders.forEach(function (f, i) {
+      var ch = st.faders[f], top = c["FadeMeter" + (i + 1)][1];
+      customRow("Fader " + (i + 1) + " · " + LABELS[ch], [top], function (nc) {
+        return [["FadeMeter" + (i + 1), [darken(nc, .16), nc]], ["Fader" + (i + 1) + "Mute", [nc, null]]];
+      });
+    });
+    customRow("Bouton micro", [c.MicrophoneMute[0]], function (nc) { return [["MicrophoneMute", [nc, null]]]; });
+    customRow("Logo X et éclairage", [c.Accent[0]], function (nc) { return [["Accent", [nc, nc]], ["Global", [nc, nc]], ["Bleep", [nc, null]]]; });
+    lt.customKey = ckey;
+  }
+}
+function customRow(label, colours, toTargets) {
+  var row = h("div", {"class": "custom-row"}, '<span class="lbl">' + label + "</span>");
+  var sws = h("div", {"class": "sws"});
+  colours.forEach(function (cur) {
+    var b = h("button", {"class": "swb", style: "--c:#" + cur});
+    b.addEventListener("click", function () {
+      colourPop(b, cur, function (nc) {
+        toTargets(nc).forEach(function (t) {
+          var cols = S.state.colours[t[0]]; if (t[1][0]) cols[0] = t[1][0]; if (t[1][1]) cols[1] = t[1][1];
+          post("colour", {target: t[0], colours: t[1]});
+        });
+        S.state.lighting.theme = "custom"; lt.customKey = null; lt.themesKey = null; renderLight();
+      });
+    });
+    sws.appendChild(b);
+  });
+  row.appendChild(sws); lt.custom.appendChild(row);
+}
+function deviceSvg() {
+  var st = S.state, c = st.colours, pos = L ? L.live.fader_positions : [null, null, null, null];
+  var o = '<svg viewBox="0 0 440 300"><defs><filter id="bl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>' +
+    '<linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a2f"/><stop offset="1" stop-color="#121215"/></linearGradient></defs>';
+  o += '<ellipse cx="220" cy="282" rx="190" ry="10" fill="#' + c.Global[0] + '" opacity=".35" filter="url(#bl)"/>';
+  o += '<rect x="14" y="16" width="412" height="262" rx="26" fill="url(#body)" stroke="rgba(255,255,255,.1)"/>';
+  o += '<g transform="translate(206,30)"><path d="M0 0l14 14M14 0L0 14" stroke="#' + c.Accent[0] + '" stroke-width="4" stroke-linecap="round"/><path d="M0 0l14 14M14 0L0 14" stroke="#' + c.Accent[0] + '" stroke-width="5" opacity=".7" filter="url(#bl)"/></g>';
+  S.meta.faders.forEach(function (f, i) {
+    var x = 46 + i * 80, ch = st.faders[f], muted = st.mutes[ch], fm = c["FadeMeter" + (i + 1)], mb = c["Fader" + (i + 1) + "Mute"][0];
+    var g = "g" + i;
+    o += '<linearGradient id="' + g + '" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#' + fm[0] + '"/><stop offset="1" stop-color="#' + fm[1] + '"/></linearGradient>';
+    for (var k = 0; k < 12; k++) {
+      var y = 182 - k * 11.5;
+      o += '<rect x="' + (x + 32) + '" y="' + y + '" width="8" height="7" rx="2" fill="' + (muted ? "#1d1d20" : "url(#" + g + ")") + '"/>';
+    }
+    o += '<rect x="' + (x + 12) + '" y="58" width="6" height="134" rx="3" fill="#050506"/>';
+    var p = pos[i] == null ? st.volumes[ch] : pos[i];
+    var ky = 176 - p / 255 * 112;
+    o += '<rect x="' + (x - 2) + '" y="' + ky + '" width="34" height="22" rx="5" fill="#3a3a40" stroke="rgba(255,255,255,.18)"/><rect x="' + (x + 2) + '" y="' + (ky + 10) + '" width="26" height="2" rx="1" fill="rgba(255,255,255,.55)"/>';
+    o += '<rect x="' + (x - 2) + '" y="214" width="48" height="26" rx="8" fill="#' + mb + '" opacity="' + (muted ? 1 : .22) + '"/>';
+    if (muted) o += '<rect x="' + (x - 2) + '" y="214" width="48" height="26" rx="8" fill="#' + mb + '" opacity=".6" filter="url(#bl)"/>';
+    o += '<text x="' + (x + 22) + '" y="258" fill="rgba(255,255,255,.45)" font-size="10" text-anchor="middle" font-family="Segoe UI, sans-serif">' + LABELS[ch] + '</text>';
+  });
+  var mm = c.MicrophoneMute[0], bl = c.Bleep[0], micMuted = st.mutes.Mic;
+  o += '<rect x="372" y="64" width="38" height="62" rx="10" fill="#' + mm + '" opacity="' + (micMuted ? 1 : .22) + '"/>';
+  o += '<text x="391" y="140" fill="rgba(255,255,255,.45)" font-size="9" text-anchor="middle" font-family="Segoe UI, sans-serif">MICRO</text>';
+  o += '<rect x="372" y="152" width="38" height="38" rx="10" fill="#' + bl + '" opacity="' + (L && L.live.pressed.indexOf("Bleep") >= 0 ? 1 : .22) + '"/>';
+  o += '<text x="391" y="204" fill="rgba(255,255,255,.45)" font-size="9" text-anchor="middle" font-family="Segoe UI, sans-serif">BLEEP</text>';
+  return o + "</svg>";
+}
+
+/* ---------- scenes et conseils ---------- */
+var sc = {};
+function buildScenes() {
+  var root = $("p-scenes"); root.innerHTML = "";
+  var grid = h("div", {"class": "scene-grid"});
+  var left = h("div", {style: "min-width:0"});
+  sc.grid = h("div", {"class": "scenes"});
+  left.appendChild(sc.grid);
+  var mine = h("div", {"class": "card mine"}, "<h3>Mes scènes</h3>");
+  sc.mine = h("div", {"class": "mine-list"}); mine.appendChild(sc.mine);
+  var save = h("div", {"class": "save-row"});
+  sc.name = h("input", {placeholder: "Nom de la configuration actuelle", maxlength: "40"});
+  var sb = h("button", {"class": "pill primary"}, svg("save") + "Enregistrer");
+  sb.addEventListener("click", function () {
+    var n = sc.name.value.trim(); if (!n) { sc.name.focus(); return; }
+    post("scene-save", {name: n}).then(function () { sc.name.value = ""; toast("Scène « " + n + " » enregistrée"); refresh(); });
+  });
+  sc.name.addEventListener("keydown", function (e) { if (e.key === "Enter") sb.click(); });
+  save.appendChild(sc.name); save.appendChild(sb); mine.appendChild(save);
+  left.appendChild(mine);
+  grid.appendChild(left);
+  var right = h("div", {style: "display:flex;flex-direction:column;gap:14px;min-height:0;height:100%"});
+  right.appendChild(buildAuto());
+  var adv = h("div", {"class": "card", style: "overflow:auto;flex:1;min-height:0"}, "<h3>" + svg("bulb", ' style="width:16px;height:16px;color:#FFD60A"') + "Conseils</h3>");
+  sc.adv = h("div"); adv.appendChild(sc.adv);
+  right.appendChild(adv);
+  grid.appendChild(right);
+  root.appendChild(grid);
+  built.scenes = true;
+}
+function sceneLabel(k) { return S.meta.scenes[k] ? S.meta.scenes[k].label : k; }
+function sceneNames() { return Object.keys(S.meta.scenes).concat(Object.keys(S.state.user_scenes)); }
+function appLabel(a) { var k = String(a).toLowerCase(); return S.meta.known_apps[k] || S.meta.known_apps[k + ".exe"] || a; }
+function buildAuto() {
+  var card = h("div", {"class": "card", style: "flex:none"});
+  var top = h("div", {"class": "row-switch", style: "padding:0 0 6px"}, '<div><b>Scènes automatiques</b><small>Change de scène quand une appli s\u2019ouvre.</small></div>');
+  sc.autoSw = h("button", {"class": "switch"});
+  sc.autoSw.addEventListener("click", function () { saveAuto({enabled: !S.state.auto_scenes.enabled}); });
+  top.appendChild(sc.autoSw); card.appendChild(top);
+  sc.autoList = h("div", {"class": "auto-list"}); card.appendChild(sc.autoList);
+  var add = h("div", {"class": "auto-add"});
+  sc.autoApp = h("input", {"class": "inp", placeholder: "ex. obs64.exe", list: "apps-dl", maxlength: "64"});
+  var dl = h("datalist", {id: "apps-dl"}); sc.appsDl = dl;
+  sc.autoScene = h("select", {"class": "inp"});
+  var plus = h("button", {"class": "pill primary", style: "padding:0;justify-content:center;height:34px;border-radius:10px", title: "Ajouter"}, svg("plus"));
+  plus.addEventListener("click", function () {
+    var app = sc.autoApp.value.trim(); if (!app) { sc.autoApp.focus(); return; }
+    var rules = S.state.auto_scenes.rules.concat([{app: app, scene: sc.autoScene.value}]);
+    sc.autoApp.value = "";
+    saveAuto({rules: rules, enabled: true});
+  });
+  sc.autoApp.addEventListener("focus", loadApps);
+  sc.autoApp.addEventListener("keydown", function (e) { if (e.key === "Enter") plus.click(); });
+  add.appendChild(sc.autoApp); add.appendChild(sc.autoScene); add.appendChild(plus); card.appendChild(add); card.appendChild(dl);
+  var fb = h("div", {style: "display:flex;align-items:center;gap:8px;margin-top:8px"}, '<span class="muted-txt" style="font-size:12px;white-space:nowrap">Quand elle se ferme</span>');
+  sc.autoFb = h("select", {"class": "inp", style: "flex:1"});
+  sc.autoFb.addEventListener("change", function () { saveAuto({fallback: sc.autoFb.value || null}); });
+  fb.appendChild(sc.autoFb); card.appendChild(fb);
+  sc.autoNote = h("div", {"class": "auto-note"}); card.appendChild(sc.autoNote);
+  loadApps();
+  return card;
+}
+function loadApps() {
+  api("/api/processes").then(function (p) {
+    sc.appsDl.innerHTML = "";
+    p.known.forEach(function (a) { sc.appsDl.appendChild(h("option", {value: a.app}, esc(a.label))); });
+    p.others.forEach(function (a) { sc.appsDl.appendChild(h("option", {value: a})); });
+  }).catch(function () {});
+}
+function saveAuto(patch) {
+  var a = S.state.auto_scenes;
+  var body = {enabled: "enabled" in patch ? patch.enabled : a.enabled, rules: patch.rules || a.rules, fallback: "fallback" in patch ? patch.fallback : a.fallback};
+  S.state.auto_scenes = body; sc.autoKey = null; renderAuto();
+  return post("auto-scenes", body).then(refresh);
+}
+function renderAuto() {
+  var a = S.state.auto_scenes, names = sceneNames();
+  var key = JSON.stringify([a, names, S.auto && S.auto.note]);
+  if (sc.autoKey === key) return;
+  sc.autoKey = key;
+  sc.autoSw.classList.toggle("on", !!a.enabled);
+  sc.autoList.innerHTML = "";
+  if (!a.rules.length) sc.autoList.appendChild(h("p", {"class": "muted-txt", style: "font-size:12px;padding:2px"}, "Exemple : OBS ouvert → Streaming, Spotify → Écoute."));
+  a.rules.forEach(function (r, idx) {
+    var it = h("div", {"class": "auto-item"});
+    it.appendChild(h("span", {title: r.app}, esc(appLabel(r.app)) + "<em>→</em>" + esc(sceneLabel(r.scene))));
+    var del = h("button", {"class": "ibtn", title: "Retirer"}, svg("trash"));
+    del.addEventListener("click", function () { saveAuto({rules: a.rules.filter(function (_, j) { return j !== idx; })}); });
+    it.appendChild(del); sc.autoList.appendChild(it);
+  });
+  var cur = sc.autoScene.value;
+  sc.autoScene.innerHTML = names.map(function (n) { return '<option value="' + esc(n) + '">' + esc(sceneLabel(n)) + "</option>"; }).join("");
+  if (cur && names.indexOf(cur) >= 0) sc.autoScene.value = cur;
+  sc.autoFb.innerHTML = '<option value="">Ne rien changer</option>' + names.map(function (n) { return '<option value="' + esc(n) + '">' + esc(sceneLabel(n)) + "</option>"; }).join("");
+  sc.autoFb.value = a.fallback || "";
+  var note = S.auto && S.auto.note;
+  sc.autoNote.textContent = !a.enabled ? "Désactivées." : note ? (note.applied ? "Dernier changement : " + sceneLabel(note.scene) + " (" + appLabel(note.why.replace(/ (ouvert|déjà ouvert)$/, "")) + (/ouvert$/.test(note.why) ? " ouvert" : "") + ") à " + new Date(note.t * 1000).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"}) + "." : "Au démarrage, " + appLabel(note.why.replace(/ déjà ouvert$/, "")) + " était déjà ouvert : scène gardée telle quelle.") : "J\u2019observe les applis toutes les 3 secondes.";
+}
+function renderScenes() {
+  if (!built.scenes) buildScenes();
+  var st = S.state, key = JSON.stringify([st.scene, Object.keys(st.user_scenes)]);
+  if (sc.key !== key) {
+    sc.grid.innerHTML = "";
+    Object.keys(S.meta.scenes).forEach(function (k) {
+      var d = S.meta.scenes[k], b = h("button", {"class": "scene" + (st.scene === k ? " on" : "")});
+      var lane = S.meta.faders.map(function (f) { var ch = d.faders[f]; return '<span style="--c:' + col(ch) + '" title="' + LABELS[ch] + '">' + svg(ch) + "</span>"; }).join("");
+      b.innerHTML = chipIco(SCENE_ICONS[k], SCENE_COLOURS[k]) + "<b>" + frLabel(d.label) + "</b><p>" + frLabel(d.desc) + '</p><div class="lane">' + lane + "</div>" + (st.scene === k ? '<span class="tag">ACTIVE</span>' : "");
+      b.addEventListener("click", function () { withUndo("Scène " + frLabel(d.label) + " appliquée", function () { return post("scene", {name: k}).then(refresh); }); });
+      sc.grid.appendChild(b);
+    });
+    sc.mine.innerHTML = "";
+    var names = Object.keys(st.user_scenes);
+    if (!names.length) sc.mine.appendChild(h("p", {"class": "muted-txt", style: "padding:4px 2px"}, "Règle tout comme tu aimes, puis enregistre-le ici pour le retrouver en un clic."));
+    names.forEach(function (n) {
+      var it = h("div", {"class": "mine-item"});
+      it.appendChild(h("span", {"class": "chip-ico", style: "--c:#0A84FF;width:28px;height:28px;border-radius:8px"}, svg("scenes")));
+      var b = h("b"); b.textContent = n; it.appendChild(b);
+      if (st.scene === n) it.appendChild(h("span", {"class": "muted-txt", style: "font-size:11px"}, "active"));
+      it.appendChild(h("button", {"class": "pill", style: "height:28px;padding:0 12px", onclick: function () { withUndo("Scène « " + n + " » appliquée", function () { return post("scene", {name: n}).then(refresh); }); }}, "Appliquer"));
+      it.appendChild(h("button", {"class": "ibtn", title: "Supprimer", onclick: function () { post("scene-delete", {name: n}).then(refresh); }}, svg("trash")));
+      sc.mine.appendChild(it);
+    });
+    sc.key = key;
+  }
+  renderAuto();
+  renderAdvice();
+}
+function advices() {
+  var s = S.state, a = [];
+  if (!S.connected) return [{lvl: "warn", t: "GoXLR déconnectée", d: "Vérifie le câble USB. L\u2019appli se reconnecte toute seule."}];
+  if (s.mutes.Mic) a.push({lvl: "warn", t: "Ton micro est coupé", d: "Personne ne t\u2019entend en ce moment.", label: "Réactiver", fn: function () { return post("mute", {channel: "Mic", muted: false}); }});
+  else if (s.partial.Mic) a.push({lvl: "warn", t: "Micro " + MUTED_TXT[s.partial.Mic].toLowerCase(), d: "Une partie de ton public ne t\u2019entend pas.", label: "Réactiver", fn: function () { return post("mute", {channel: "Mic", muted: false}); }});
+  if (L && L.live.mic_db <= -72 && !s.mutes.Mic) a.push({lvl: "warn", t: "Aucun son du micro", d: "Branche ton micro, puis lance la détection pour le régler.", label: "Détecter", fn: function () { startJob("detect-mic", {}); return Promise.resolve(); }});
+  if (s.routing.Chat.ChatMic) a.push({lvl: "warn", t: "Écho dans Discord", d: "Le chat est renvoyé vers le chat : tes amis s\u2019entendent eux-mêmes.", label: "Corriger", fn: function () { return post("route", {input: "Chat", output: "ChatMic", enabled: false}); }});
+  if (s.routing.System.BroadcastMix) a.push({t: "Tes notifications passent en live", d: "Les sons Windows sont envoyés au stream.", label: "Les retirer", fn: function () { return post("route", {input: "System", output: "BroadcastMix", enabled: false}); }});
+  if (s.mic.type === "dynamic" && s.mic.gain_db < 40) a.push({t: "Gain bas pour un micro dynamique", d: "Il est à " + s.mic.gain_db + " dB ; un micro dynamique demande souvent 45 à 60 dB.", label: "Gain automatique", fn: function () { startJob("auto-gain", {}); return Promise.resolve(); }});
+  if (s.routing.Microphone.Headphones && s.volumes.MicMonitor > 64) a.push({t: "Tu t\u2019entends dans le casque", d: "Retour micro à " + pct(s.volumes.MicMonitor) + " %. Pratique pour se contrôler, gênant sinon.", label: "Couper le retour", fn: function () { return post("volume", {channel: "MicMonitor", value: 0}); }});
+  if (s.mic_preset === "brut" || (!s.dsp.gate.enabled && s.mic_preset === "custom")) a.push({t: "Voix sans traitement", d: "Un préréglage rend ta voix plus claire et coupe le bruit de fond.", label: "Essayer « Stream »", fn: function () { return post("mic-preset", {name: "stream"}); }});
+  var onF = S.meta.faders.map(function (f) { return s.faders[f]; });
+  if (onF.indexOf("Mic") < 0) a.push({t: "Micro hors des faders", d: "Tu le coupes avec le bouton de toux ; son volume se règle dans Mixeur."});
+  if (s.volumes.Headphones < 64) a.push({t: "Casque très bas", d: "Il est à " + pct(s.volumes.Headphones) + " %.", label: "Remonter à 80 %", fn: function () { return post("volume", {channel: "Headphones", value: 204}); }});
+  if (!a.length) a.push({lvl: "ok", t: "Tout est bien réglé", d: "Rien à signaler sur ta configuration."});
+  return a;
+}
+function renderAdvice() {
+  var a = advices(), key = JSON.stringify(a.map(function (x) { return x.t + x.d; }));
+  var warn = a.filter(function (x) { return x.lvl !== "ok"; }).length;
+  var badge = $("nav-badge"); badge.textContent = warn; badge.style.display = warn ? "" : "none";
+  if (!built.scenes || sc.advKey === key) return;
+  sc.adv.innerHTML = "";
+  a.forEach(function (x) {
+    var it = h("div", {"class": "advice"});
+    it.innerHTML = chipIco(x.lvl === "ok" ? "ok" : x.lvl === "warn" ? "warn" : "bulb", x.lvl === "ok" ? "#30D158" : x.lvl === "warn" ? "#FF9F0A" : "#64D2FF");
+    var body = h("div", {}, "<b>" + x.t + "</b><p>" + x.d + "</p>");
+    if (x.label) body.appendChild(h("button", {"class": "pill", onclick: function () { x.fn().then(refresh); }}, x.label));
+    it.appendChild(body); sc.adv.appendChild(it);
+  });
+  sc.advKey = key;
+}
+
+/* ---------- menu bas droite ---------- */
+function openMenu() {
+  var box = h("div", {style: "width:250px"});
+  function item(icon, label, fn) { var b = h("button", {"class": "menu-item"}, svg(icon) + "<span>" + label + "</span>"); b.addEventListener("click", function () { closePop(); fn(); }); box.appendChild(b); }
+  var micMuted = S && !!muteState("Mic");
+  item(micMuted ? "Mic" : "micOff", micMuted ? "Réactiver le micro" : "Couper le micro", function () { setMute("Mic", !micMuted, "all"); });
+  box.appendChild(h("div", {"class": "menu-sep"}));
+  item("scenes", "Scènes…", function () { go("scenes"); });
+  item("BroadcastMix", "Incrustation pour OBS", openOverlaySheet);
+  item("light", "Réglages", openSettingsSheet);
+  item("radar", "Diagnostic", openDiag);
+  item("refresh", "Rechercher une mise à jour", checkUpdate);
+  box.appendChild(h("div", {"class": "menu-sep"}));
+  item("download", "Exporter ma configuration", function () {
+    var a = h("a", {href: URL.createObjectURL(new Blob([JSON.stringify(S.state, null, 2)], {type: "application/json"})), download: "goxlr-mini-config.json"}); a.click();
+  });
+  item("upload", "Importer une configuration", function () { $("import-file").click(); });
+  item("reset", "Revenir aux réglages d\u2019origine", function () {
+    sheet({icon: "reset", title: "Revenir aux réglages d\u2019origine ?", text: "Faders, volumes, routage, micro et couleurs reprennent le profil de base. Tes scènes enregistrées sont gardées.",
+      actions: [["Annuler", null], ["Réinitialiser", function () {
+        api("/api/default-profile").then(function (p) { p.user_scenes = S.state.user_scenes; return withUndo("Réglages d\u2019origine rétablis", function () { return post("profile", p).then(refresh); }); });
+      }, "danger"]]});
+  });
+  box.appendChild(h("div", {"class": "menu-sep"}));
+  item("info", "À propos", function () {
+    var repo = (S.update && S.update.repo_url) || "https://github.com/samirmedani/goxlr-mini";
+    sheet({icon: "info", title: "GoXLR Mini " + S.version, text: "Logiciel libre (licence MIT) pour piloter une GoXLR Mini sous Windows avec le pilote officiel." + "<br>Firmware " + (S.firmware || "—") + (S.sim ? " · <b>appareil simulé</b>" : "") + "<br><br><span class=\"muted-txt\">Projet indépendant, non affilié à TC-Helicon ni à Music Tribe.</span>",
+      actions: [["Code source sur GitHub", function () { openUrl(repo); }], ["Fermer", null, "primary"]]});
+  });
+  openPop($("fab"), box, "up-left");
+}
+
+/* ---------- diagnostic, incrustation, reglages ---------- */
+var diagTimer = null;
+function fmtDur(s) { if (s == null) return "—"; if (s < 60) return s + " s"; if (s < 3600) return Math.floor(s / 60) + " min"; return Math.floor(s / 3600) + " h " + Math.floor(s % 3600 / 60) + " min"; }
+var STATUS_FR = {ok: ["Tout va bien", "#30D158", "ok"], absent: ["GoXLR débranchée", "#FF9F0A", "warn"], error: ["Connexion impossible", "#FF9F0A", "warn"], blocked: ["Pilote USB bloqué", "#FF453A", "warn"], starting: ["Démarrage", "#64D2FF", "info"]};
+function openDiag() {
+  var body = h("div");
+  sheet({wide: true, body: body, actions: [["Copier le rapport", function () { copyReport(); }, "", true], ["Reconnecter la GoXLR", function () { post("reconnect").then(function () { toast("Reconnexion demandée"); }); }, "", true], ["Fermer", null, "primary"]]});
+  function paint() {
+    api("/api/health").then(function (hl) {
+      if (!sheetState || sheetState.body !== body) return;
+      var st = STATUS_FR[hl.status] || [hl.status, "#8E8E93", "info"], s = hl.stats || {};
+      var cells = [["Appareil", hl.connected ? "Connectée" : hl.present === false ? "Absente" : "Hors ligne"], ["Firmware", hl.firmware || "—"], ["Connectée depuis", fmtDur(hl.device_uptime_s)], ["Moteur lancé depuis", fmtDur(hl.engine_uptime_s)],
+        ["Commandes", (s.commands || 0).toLocaleString("fr-FR")], ["Index actuel", hl.command_index + " / 65535"], ["Remises à zéro", s.index_resets || 0], ["Resynchros", s.resyncs || 0],
+        ["Reconnexions", hl.reconnects], ["Relances moteur", hl.engine_restarts], ["Boucle USB", hl.loop_age_ms + " ms"], ["En attente", hl.pending]];
+      body.innerHTML = '<div class="diag-head">' + chipIco(st[2], st[1]) + "<div><h2>" + st[0] + "</h2><p class=\"muted-txt\">Moteur v" + hl.version + (hl.simulated ? " · appareil simulé" : "") + (hl.supervised ? " · surveillé par son superviseur" : "") + (hl.last_error && !hl.connected ? " · " + esc(hl.last_error) : "") + "</p></div></div>" +
+        '<div class="diag-grid">' + cells.map(function (c) { return "<div><small>" + c[0] + "</small><b>" + esc(c[1]) + "</b></div>"; }).join("") + "</div>" +
+        '<div class="diag-log">' + esc((hl.log || []).slice(-14).join("\n")) + "</div>";
+      if (hl.simulated) body.appendChild(simTools());
+      sheetState.report = hl;
+    }).catch(function () { body.innerHTML = "<h2>Le moteur ne répond pas</h2><p class=\"muted-txt\">Il est relancé automatiquement par son superviseur.</p>"; });
+  }
+  paint();
+  clearInterval(diagTimer);
+  diagTimer = setInterval(function () { if (!sheetState || sheetState.body !== body) { clearInterval(diagTimer); return; } paint(); }, 1000);
+}
+function copyReport() {
+  var r = sheetState && sheetState.report; if (!r) return;
+  var txt = JSON.stringify(r, null, 2);
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast("Rapport copié"); }, function () { toast("Copie impossible"); });
+}
+function simTools() {
+  var box = h("div", {"class": "diag-sim"});
+  function b(label, path, payload) { box.appendChild(h("button", {"class": "pill", onclick: function () { post("sim/" + path, payload || {}); }}, label)); }
+  b("Appui mute 1", "press", {button: "Fader1Mute", ms: 150}); b("Appui long mute 2", "press", {button: "Fader2Mute", ms: 900});
+  b("Bouton micro", "press", {button: "MicrophoneMute", ms: 150}); b("Bleep", "press", {button: "Bleep", ms: 600});
+  b("Parler", "talk", {on: true}); b("Silence", "talk", {on: false});
+  b("Débrancher", "unplug"); b("Rebrancher", "plug"); b("Bloquer l’USB 20 s", "hang", {seconds: 20});
+  return box;
+}
+function openOverlaySheet() {
+  var base = location.origin + "/overlay";
+  var body = h("div");
+  body.innerHTML = '<div class="diag-head">' + chipIco("BroadcastMix", "#BF5AF2") + "<div><h2>Incrustation pour OBS</h2><p class=\"muted-txt\">Ajoute une source « Navigateur » dans OBS avec cette adresse (400 × 120). Elle affiche « Micro coupé » quand le stream ne t\u2019entend plus.</p></div></div>" +
+    '<div class="url-box" id="ov-url">' + base + "</div>" +
+    '<div class="chips" style="margin-top:12px" id="ov-opts"><button data-q="" class="on">Seulement si coupé</button><button data-q="mode=always">Toujours visible</button><button data-q="mode=always&amp;meter=1">Avec vumètre</button></div>';
+  sheet({wide: true, body: body, actions: [["Copier l’adresse", function () { var u = $("ov-url").textContent; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast("Adresse copiée"); }, function () { toast("Sélectionne l’adresse et copie-la"); }); }, "", true], ["Fermer", null, "primary"]]});
+  body.querySelectorAll("#ov-opts button").forEach(function (bt) {
+    bt.addEventListener("click", function () { body.querySelectorAll("#ov-opts button").forEach(function (x) { x.classList.toggle("on", x === bt); }); $("ov-url").textContent = base + (bt.dataset.q ? "?" + bt.dataset.q : ""); });
+  });
+}
+function openSettingsSheet() {
+  var body = h("div");
+  body.innerHTML = '<div class="diag-head">' + chipIco("light", "#0A84FF") + "<div><h2>Réglages</h2><p class=\"muted-txt\">Comportement des boutons et notifications de l\u2019appli.</p></div></div>";
+  var f = h("div", {"class": "field"}, '<div class="field-top">Durée d\u2019un appui long<span id="hold-val"></span></div>');
+  var sl = Slider({min: 250, max: 1500, step: 50, value: S.state.prefs.hold_ms, colour: "var(--accent)",
+    onInput: function (v) { $("hold-val").textContent = (v / 1000).toFixed(2).replace(".", ",") + " s"; },
+    onCommit: function (v) { S.state.prefs.hold_ms = v; post("settings", {prefs: {hold_ms: v}}); }});
+  f.appendChild(sl.el); body.appendChild(f);
+  var r = h("div", {"class": "row-switch", style: "margin-top:10px"}, "<div><b>Bulle à l\u2019écran quand le micro change</b><small>Petit rappel en bas de l\u2019écran, même en jeu (appli Windows).</small></div>");
+  var sw = h("button", {"class": "switch" + (S.state.prefs.osd ? " on" : "")});
+  sw.addEventListener("click", function () { var v = !S.state.prefs.osd; S.state.prefs.osd = v; sw.classList.toggle("on", v); post("settings", {prefs: {osd: v}}); });
+  r.appendChild(sw); body.appendChild(r);
+  sheet({wide: true, body: body, actions: [["Fermer", null, "primary"]]});
+  $("hold-val").textContent = (S.state.prefs.hold_ms / 1000).toFixed(2).replace(".", ",") + " s";
+}
+
+/* ---------- feuille et analyses ---------- */
+var sheetState = null;
+function sheet(o) {
+  var b = $("sheet-box");
+  sheetState = o;
+  b.classList.toggle("wide", !!o.wide);
+  if (o.body) { b.innerHTML = ""; b.appendChild(o.body); }
+  else {
+    var html = '<div class="ring">' + (o.progress != null ? '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/><circle id="ring-p" cx="50" cy="50" r="44" fill="none" stroke="#0A84FF" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="' + (276.5 * (1 - o.progress)) + '" style="transition:stroke-dashoffset .2s"/></svg>' : "") + '<div class="ico">' + svg(o.icon) + "</div></div>";
+    html += "<h2>" + o.title + "</h2><p>" + (o.text || "") + "</p>";
+    if (o.meter) { html += '<div class="sheet-meter"><div class="meter" id="sheet-meter">' + new Array(35).join("<i></i>") + "</div></div>"; }
+    b.innerHTML = html;
+  }
+  var acts = h("div", {"class": "sheet-actions"});
+  (o.actions || []).forEach(function (a) {
+    var btn = h("button", {"class": "pill " + (a[2] || "")}, a[0]);
+    btn.addEventListener("click", function () { if (!a[3]) closeSheet(); if (a[1]) a[1](); });
+    acts.appendChild(btn);
+  });
+  b.appendChild(acts);
+  $("sheet").classList.add("on");
+}
+function closeSheet() { $("sheet").classList.remove("on"); sheetState = null; }
+var jobSeen = null;
+function startJob(kind, params) {
+  post(kind, params).then(function (r) { if (r && r.ok) { jobSeen = kind; showJob({kind: kind, running: true, progress: 0, step: "Préparation…"}); } });
+}
+function showJob(j) {
+  if (j.running) {
+    var title = j.kind === "detect-mic" ? "Détection du micro" : "Réglage automatique du gain";
+    var text = j.kind === "auto-gain" ? "<b>Parle normalement</b>, comme en live, pendant quelques secondes." : (j.step || "");
+    if (sheetState && sheetState.job) {
+      var rp = $("ring-p"); if (rp) rp.setAttribute("stroke-dashoffset", 276.5 * (1 - j.progress));
+      var p = document.querySelector(".sheet-box p"); if (p && j.kind === "detect-mic") p.textContent = j.step || "";
+      return;
+    }
+    sheet({job: true, icon: j.kind === "detect-mic" ? "radar" : "wand", title: title, text: text, progress: j.progress, meter: true,
+      actions: [["Annuler", function () { post("job-cancel"); }]]});
+    return;
+  }
+  if (j.error) { sheet({icon: "warn", title: "Analyse interrompue", text: j.error, actions: [["OK", null]]}); return; }
+  var r = j.result || {};
+  if (j.kind === "detect-mic") {
+    if (!r.detected) {
+      sheet({icon: "Mic", title: "Aucun micro détecté", text: r.message, actions: [["Fermer", null], ["Essayer avec 48 V", function () { startJob("detect-mic", {phantom: true}); }]]});
+    } else {
+      sheet({icon: "ok", title: r.message, text: "Je te conseille : <b>" + MIC_TYPE_LABELS[r.detected] + "</b>, gain <b>" + r.recommended_gain + " dB</b> et le préréglage <b>" + frLabel(S.meta.mic_presets[r.recommended_preset].label) + "</b>.",
+        actions: [["Plus tard", null], ["Appliquer", function () {
+          post("mic", {type: r.detected, gain_db: r.recommended_gain}).then(function () { return post("mic-preset", {name: r.recommended_preset}); }).then(function () { toast("Micro configuré"); refresh(); });
+        }, "primary"]]});
+    }
+  } else {
+    sheet({icon: "ok", title: "Gain réglé", text: "De <b>" + r.old_gain_db + " dB</b> à <b>" + r.new_gain_db + " dB</b>. Pic de ta voix mesuré à " + Math.round(r.voice_peak_db) + " dB.", actions: [["Parfait", null]]});
+  }
+}
+function liveJob() {
+  if (!L || !L.job || !jobSeen) return;
+  showJob(L.job);
+  if (!L.job.running) { jobSeen = null; refresh(); }
+}
+
+
+/* ---------- mises a jour ---------- */
+var UPD_PHASE = {downloading: "Téléchargement", verifying: "Vérification de l’empreinte…", extracting: "Préparation…", applying: "Installation : GoXLR Mini redémarre, l’interface revient toute seule…"};
+var UPD_WHY = {dev: "Version de développement (compilée depuis les sources) : installe la nouvelle version depuis la page de la release.",
+  os: "La mise à jour intégrée fonctionne sous Windows seulement.",
+  readonly: "Le dossier d’installation n’est pas modifiable : installe depuis la page de la release."};
+var updShown = {};
+function openUrl(u) { if (/^https:\/\//.test(u)) window.open(u, "_blank"); }
+function frDate(iso) { var d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR"); }
+function mdInline(t) {
+  return esc(t).replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*]+)\*/g, "<i>$1</i>")
+    .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2" data-ext="1">$1</a>');
+}
+function mdRender(src) {
+  var out = [], list = null, code = null;
+  function close() { if (list) { out.push("</" + list + ">"); list = null; } }
+  String(src || "").replace(/\r/g, "").split("\n").forEach(function (line) {
+    if (/^```/.test(line)) { if (code === null) { close(); code = []; } else { out.push("<pre><code>" + esc(code.join("\n")) + "</code></pre>"); code = null; } return; }
+    if (code !== null) { code.push(line); return; }
+    var m;
+    if ((m = line.match(/^#{1,4}\s+(.*)/))) { close(); out.push("<h4>" + mdInline(m[1]) + "</h4>"); }
+    else if ((m = line.match(/^\s*[-*]\s+(.*)/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push("<li>" + mdInline(m[1]) + "</li>"); }
+    else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push("<li>" + mdInline(m[1]) + "</li>"); }
+    else if ((m = line.match(/^>\s?(.*)/))) { close(); out.push("<p><i>" + mdInline(m[1]) + "</i></p>"); }
+    else if (line.trim()) { close(); out.push("<p>" + mdInline(line) + "</p>"); }
+    else close();
+  });
+  close();
+  if (code !== null) out.push("<pre><code>" + esc(code.join("\n")) + "</code></pre>");
+  return out.join("") || "<p>Pas de notes pour cette version.</p>";
+}
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a[data-ext]");
+  if (a) { e.preventDefault(); openUrl(a.getAttribute("href")); }
+});
+function renderUpdate() {
+  var u = S.update; if (!u) return;
+  $("ver-txt").textContent = "v" + u.current;
+  $("ver-txt").title = "GoXLR Mini " + u.current;
+  var st = $("ver-state"), busy = u.phase && u.phase !== "failed", avail = u.status === "available" && u.latest;
+  st.className = "ver-state" + (avail ? " avail" : "") + (busy ? " busy" : "");
+  if (busy) st.innerHTML = "<i></i>" + (u.phase === "downloading" && u.progress != null ? "Téléchargement " + Math.round(u.progress * 100) + " %" : "Installation…");
+  else if (u.phase === "failed") st.innerHTML = "<i style=\"background:var(--red)\"></i>Échec de la mise à jour";
+  else if (avail) st.innerHTML = "<i></i>" + esc(u.latest.version) + " disponible";
+  else if (!u.release_build) st.innerHTML = "<i style=\"background:var(--text3)\"></i>développement";
+  else if (u.status === "up-to-date") st.innerHTML = "<i></i>À jour";
+  else st.innerHTML = "";
+  st.title = avail ? "GoXLR Mini " + u.latest.version + " est disponible" : "";
+  $("ver-check").classList.toggle("spin-on", u.status === "checking");
+  $("upd-btn").style.display = avail && !busy ? "" : "none";
+  if (sheetState && sheetState.update) paintUpdateSheet();
+  if (u.installed && !updShown.installed) {
+    updShown.installed = true;
+    var ins = u.installed;
+    if (ins.ok && ins.version === u.current) toast("GoXLR Mini " + ins.version + " est installé", "Nouveautés", function () { if (u.latest) openUpdateSheet(); });
+    else if (!ins.ok) toast("La mise à jour vers " + ins.version + " a échoué : retour à " + ins.from_version);
+    post("update-ack");
+  }
+  if (avail && !busy && u.latest.version !== u.reminded && !updShown[u.latest.version] && !sheetState && !(L && L.job)) {
+    updShown[u.latest.version] = true;
+    post("update-remind", {version: u.latest.version});
+    toast("GoXLR Mini " + u.latest.version + " est disponible", "Voir", openUpdateSheet);
+  }
+}
+function checkUpdate() {
+  $("ver-check").classList.add("spin-on");
+  post("update-check").then(function (r) {
+    if (!r || !r.update) return;
+    S.update = r.update;
+    var res = r.update.result;
+    if (res === "found") openUpdateSheet();
+    else toast(res === "up-to-date" ? "GoXLR Mini est à jour" : res === "rate-limited" ? "GitHub limite les recherches : réessaie plus tard" : "Recherche impossible : réessaie plus tard");
+    renderUpdate();
+  });
+}
+function openUpdateSheet() {
+  var u = S.update; if (!u || !u.latest) return;
+  var body = h("div");
+  sheet({wide: true, update: true, body: body, actions: []});
+  paintUpdateSheet();
+}
+function paintUpdateSheet() {
+  var u = S.update, b = sheetState.body, rel = u.latest || {};
+  var key = JSON.stringify([u.phase, Math.round((u.progress || 0) * 50), u.error, rel.version, u.installable, u.status]);
+  if (sheetState.key === key) return;
+  sheetState.key = key;
+  var newer = u.status === "available", busy = u.phase && u.phase !== "failed";
+  var html = '<div class="diag-head">' + chipIco("download", "#0A84FF") + "<div><h2>" + (newer ? "GoXLR Mini " + esc(rel.version) + " est disponible" : "GoXLR Mini " + esc(u.current) + " est à jour") + "</h2><p class=\"muted-txt\">Installée : " + esc(u.current) + (rel.published ? " · " + esc(rel.version) + " publiée le " + frDate(rel.published) : "") + "</p></div></div>";
+  html += '<div class="notes">' + mdRender(rel.notes) + "</div>";
+  if (busy) {
+    var pct = u.phase === "downloading" && u.progress != null ? Math.round(u.progress * 100) : null;
+    html += '<div class="upd-progress"><div class="bar' + (pct == null ? " indet" : "") + '"><i style="width:' + (pct || 0) + '%"></i></div><small>' + UPD_PHASE[u.phase] + (pct != null ? " " + pct + " %" : "") + "</small></div>";
+  } else if (u.phase === "failed" && u.error) {
+    html += '<div class="upd-fail">' + esc(u.error.msg) + " L’ancienne version reste en place.</div>";
+  } else if (newer && !u.installable) {
+    html += '<div class="upd-why">' + (UPD_WHY[u.why_not] || "") + "</div>";
+  }
+  b.innerHTML = html;
+  var acts = $("sheet-box").querySelector(".sheet-actions");
+  acts.innerHTML = "";
+  function btn(label, fn, cls, keep) { var x = h("button", {"class": "pill " + (cls || "")}, label); x.addEventListener("click", function () { if (!keep) closeSheet(); fn && fn(); }); acts.appendChild(x); }
+  if (busy) {
+    if (u.phase !== "applying") btn("Annuler", function () { post("update-cancel"); }, "", true);
+    return;
+  }
+  btn("Voir sur GitHub", function () { openUrl(u.release_page); }, "", true);
+  if (u.phase === "failed") {
+    btn("Fermer", null);
+    btn("Réessayer", function () { post("update-install").then(refresh); }, "primary", true);
+  } else if (newer) {
+    btn("Plus tard", null);
+    if (u.installable) btn("Mettre à jour", function () { post("update-install").then(refresh); }, "primary", true);
+    else btn("Ouvrir la page de la release", function () { openUrl(u.release_page); }, "primary");
+  } else btn("Fermer", null, "primary");
+}
+
+/* ---------- rendu ---------- */
+function render() {
+  if (!S) return;
+  var key = JSON.stringify([S.meta.outputs, S.meta.channels]);
+  if (key !== metaKey) { built = {}; metaKey = key; }
+  $("conn-fw").innerHTML = (S.firmware ? "Firmware " + esc(S.firmware) : "") + (S.sim ? '<br><span class="sim-badge">APPAREIL SIMULÉ</span>' : "");
+  renderUpdate();
+  var mm = $("hdr-mic"), mms = muteState("Mic");
+  mm.innerHTML = svg(mms ? "micOff" : "Mic") + (mms ? (mms === "all" ? "Micro coupé" : "Micro " + MUTED_TXT[mms].toLowerCase()) : "Micro actif");
+  mm.classList.toggle("danger", mms === "all");
+  mm.classList.toggle("warn", !!mms && mms !== "all");
+  if (page === "mixer") renderMixer();
+  if (page === "mic") renderMic();
+  if (page === "routing") renderRouting();
+  if (page === "light") renderLight();
+  if (page === "scenes") renderScenes(); else renderAdvice();
+  var cs = S.meta.faders.map(function (f) { return col(S.state.faders[f]); });
+  $("glow").style.background = "radial-gradient(900px 500px at 85% -10%," + cs[0] + "1f,transparent 60%),radial-gradient(800px 500px at 10% 110%," + cs[2] + "17,transparent 60%)";
+}
+var lastDev = 0;
+function frame(t) {
+  if (L && S) {
+    var target = L.live.mic_db == null ? -72.2 : L.live.mic_db;
+    meterShown = target > meterShown ? target : meterShown + (target - meterShown) * 0.12;
+    if (target > meterPeak || t - peakT > 1200) { meterPeak = target; peakT = t; }
+    if (target > -3) clipT = t;
+    if (page === "mic" && built.mic) {
+      meterPaint(document.querySelector("#p-mic .meter"), meterShown);
+      var dbt = meterShown <= -72 ? "—" : Math.round(meterShown) + " dB";
+      if ($("mic-db").textContent !== dbt) $("mic-db").textContent = dbt;
+      $("mic-clip").classList.toggle("on", t - clipT < 1500);
+    }
+    var sm = $("sheet-meter"); if (sm) meterPaint(sm, meterShown);
+    if (liveChanged) {
+      if (page === "mixer") liveMixer();
+      if (page === "light" && built.light && t - lastDev > 100) { lt.dev.innerHTML = deviceSvg(); lastDev = t; liveChanged = false; }
+      if (page !== "light") liveChanged = false;
+    }
+    liveJob();
+  }
+  requestAnimationFrame(frame);
+}
+function init() {
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.insertAdjacentHTML("afterbegin", svg(b.dataset.i));
+    b.addEventListener("click", function () { go(b.dataset.p); });
+  });
+  $("fab").innerHTML = svg("more");
+  $("fab").addEventListener("click", function () { if (popEl) closePop(); else openMenu(); });
+  $("hdr-mic").addEventListener("click", function () { if (!S) return; toggleMute("Mic", "all"); });
+  $("offline-diag").addEventListener("click", openDiag);
+  $("ver-check").innerHTML = svg("refresh");
+  $("ver-check").addEventListener("click", checkUpdate);
+  $("upd-btn").addEventListener("click", openUpdateSheet);
+  $("ver-state").addEventListener("click", function () { if (S && S.update && S.update.status === "available") openUpdateSheet(); });
+  $("import-file").addEventListener("change", function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    f.text().then(function (t) { var p = JSON.parse(t); return withUndo("Configuration importée", function () { return post("profile", p).then(refresh); }); })
+      .catch(function () { toast("Fichier illisible"); });
+    e.target.value = "";
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closePop(); if (sheetState && !sheetState.job) closeSheet(); } });
+  document.addEventListener("contextmenu", function (e) { if (e.target.tagName !== "INPUT") e.preventDefault(); });
+  refresh().then(function () { go(location.hash.slice(1) || "mixer"); });
+  liveLoop();
+  requestAnimationFrame(frame);
+}
+init();
+</script>
+</body>
+</html>

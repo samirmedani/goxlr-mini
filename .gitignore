@@ -1,0 +1,35 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+DerivedData/
+.build/
+target/
+.gradle/
+.next/
+.nuxt/
+.scratch/
+coverage/
+
+# build .NET
+app/bin/
+app/obj/
+
+# build outils
+tools/*/bin/
+tools/*/obj/
+
+# release
+dist/

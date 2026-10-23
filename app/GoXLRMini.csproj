@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AssemblyName>GoXLR Mini</AssemblyName>
+    <RootNamespace>GoXLRMini</RootNamespace>
+    <Version>4.1.0</Version>
+    <Product>GoXLR Mini</Product>
+    <Company>GoXLR Mini contributors</Company>
+    <Description>Contrôle de la GoXLR Mini</Description>
+    <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Avant chaque commit : aucune donnee personnelle ni fichier interdit dans ce qui est indexe.
+# Installe par scripts/install-hooks.sh. Termes propres au mainteneur : private/leak-denylist.txt (hors depot public).
+deny=""
+[ -f private/leak-denylist.txt ] && deny="--deny private/leak-denylist.txt"
+python3 scripts/leakscan.py --staged $deny || {
+  echo "Commit refuse : donnee personnelle ou fichier interdit (voir ci-dessus)." >&2
+  exit 1
+}

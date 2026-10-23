@@ -1,0 +1,102 @@
+{
+  "faders": {
+    "A": "Mic",
+    "B": "Music",
+    "C": "Chat",
+    "D": "System"
+  },
+  "volumes": {
+    "Mic": 202,
+    "LineIn": 128,
+    "Console": 128,
+    "System": 126,
+    "Game": 128,
+    "Chat": 124,
+    "Sample": 255,
+    "Music": 123,
+    "Headphones": 255,
+    "MicMonitor": 0,
+    "LineOut": 255
+  },
+  "routing": {
+    "Microphone": {
+      "Headphones": true,
+      "BroadcastMix": true,
+      "ChatMic": true,
+      "Sampler": true,
+      "LineOut": false,
+      "StreamMix2": true
+    },
+    "Chat": {
+      "Headphones": true,
+      "BroadcastMix": false,
+      "ChatMic": false,
+      "Sampler": false,
+      "LineOut": true,
+      "StreamMix2": false
+    },
+    "Music": {
+      "Headphones": true,
+      "BroadcastMix": true,
+      "ChatMic": false,
+      "Sampler": false,
+      "LineOut": true,
+      "StreamMix2": false
+    },
+    "Game": {
+      "Headphones": true,
+      "BroadcastMix": true,
+      "ChatMic": false,
+      "Sampler": false,
+      "LineOut": true,
+      "StreamMix2": true
+    },
+    "Console": {
+      "Headphones": true,
+      "BroadcastMix": true,
+      "ChatMic": false,
+      "Sampler": false,
+      "LineOut": true,
+      "StreamMix2": true
+    },
+    "LineIn": {
+      "Headphones": true,
+      "BroadcastMix": false,
+      "ChatMic": false,
+      "Sampler": false,
+      "LineOut": false,
+      "StreamMix2": false
+    },
+    "System": {
+      "Headphones": true,
+      "BroadcastMix": false,
+      "ChatMic": false,
+      "Sampler": false,
+      "LineOut": true,
+      "StreamMix2": false
+    },
+    "Samples": {
+      "Headphones": true,
+      "BroadcastMix": true,
+      "ChatMic": true,
+      "Sampler": false,
+      "LineOut": true,
+      "StreamMix2": true
+    }
+  },
+  "mic": {
+    "type": "dynamic",
+    "gain_db": 30
+  },
+  "mic_preset": "naturel",
+  "lighting": {
+    "theme": "voies",
+    "animation": "none",
+    "fader_style": {
+      "A": "gradient",
+      "B": "gradient",
+      "C": "gradient",
+      "D": "gradient"
+    }
+  }
+}
