@@ -1,5 +1,12 @@
 # Nouveautés
 
+## 4.1.5
+
+**Corrigé**
+- Installeur : le raccourci arrive sur le vrai Bureau du compte, même s'il est redirigé (OneDrive par exemple).
+- Désinstallation depuis « Programmes et fonctionnalités » : retire aussi le démarrage avec la session et le
+  raccourci du compte choisi à l'installation, même lancée depuis un autre compte administrateur.
+
 ## 4.1.4
 
 **Corrigé**

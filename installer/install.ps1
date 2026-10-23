@@ -27,6 +27,15 @@ if (-not (New-Object Security.Principal.WindowsPrincipal $me).IsInRole([Security
 }
 
 function Say($m) { Write-Host ('  ' + $m) }
+function Get-UserDesktop($sid, $prof) {
+  # Bureau reel du compte (redirige vers OneDrive, par exemple), lu dans sa ruche ; sinon <profil>\Desktop
+  $k = "Registry::HKEY_USERS\$sid\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+  $raw = $null
+  if (Test-Path $k) { $raw = (Get-Item $k).GetValue('Desktop', $null, 'DoNotExpandEnvironmentNames') }
+  if ($raw -and $prof) { return [Environment]::ExpandEnvironmentVariables([regex]::Replace($raw, '%USERPROFILE%', $prof.Replace('$', '$$'), 'IgnoreCase')) }
+  if ($prof) { return (Join-Path $prof 'Desktop') }
+  return $null
+}
 $name = 'GoXLR Mini'
 $dst = Join-Path $env:ProgramFiles $name
 $data = Join-Path $env:ProgramData $name
@@ -77,7 +86,8 @@ $exe = Join-Path $dst ('app\' + $name + '.exe')
 $ico = Join-Path $dst 'app\app.ico'
 $ws = New-Object -ComObject WScript.Shell
 $links = @(Join-Path ([Environment]::GetFolderPath('CommonPrograms')) ($name + '.lnk'))
-if (-not $NoDesktop -and $profile) { $links += Join-Path $profile ('Desktop\' + $name + '.lnk') }
+$desk = Get-UserDesktop $sid $profile
+if (-not $NoDesktop -and $desk) { $links += Join-Path $desk ($name + '.lnk') }
 foreach ($l in $links) {
   if (-not (Test-Path (Split-Path $l))) { continue }
   $s = $ws.CreateShortcut($l); $s.TargetPath = $exe; $s.WorkingDirectory = (Split-Path $exe)
@@ -94,6 +104,7 @@ $key = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\GoXLRMini'
 New-Item $key -Force | Out-Null
 $vals = [ordered]@{ DisplayName = $name; DisplayVersion = [string]$man.version; Publisher = 'GoXLR Mini (logiciel libre)'
   DisplayIcon = $ico; InstallLocation = $dst; URLInfoAbout = 'https://github.com/samirmedani/goxlr-mini'
+  InstalledFor = $user
   UninstallString = ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $dst 'uninstall.ps1') + '"') }
 foreach ($k in $vals.Keys) { New-ItemProperty $key -Name $k -Value $vals[$k] -PropertyType String -Force | Out-Null }
 foreach ($k in 'NoModify', 'NoRepair') { New-ItemProperty $key -Name $k -Value 1 -PropertyType DWord -Force | Out-Null }

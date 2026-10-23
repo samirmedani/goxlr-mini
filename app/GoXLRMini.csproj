@@ -9,7 +9,7 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>GoXLR Mini</AssemblyName>
     <RootNamespace>GoXLRMini</RootNamespace>
-    <Version>4.1.4</Version>
+    <Version>4.1.5</Version>
     <Product>GoXLR Mini</Product>
     <Company>GoXLR Mini contributors</Company>
     <Description>Contrôle de la GoXLR Mini</Description>

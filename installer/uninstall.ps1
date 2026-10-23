@@ -34,15 +34,26 @@ Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" | Where-Object { $_.ExecutablePath -and ($_.ExecutablePath.StartsWith($dst + '\', [StringComparison]::OrdinalIgnoreCase) -or $_.ExecutablePath.StartsWith($data + '\', [StringComparison]::OrdinalIgnoreCase)) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 Start-Sleep 1
 
+function Get-UserDesktop($sid, $prof) {
+  # Bureau reel du compte (redirige vers OneDrive, par exemple), lu dans sa ruche ; sinon <profil>\Desktop
+  $k = "Registry::HKEY_USERS\$sid\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+  $raw = $null
+  if (Test-Path $k) { $raw = (Get-Item $k).GetValue('Desktop', $null, 'DoNotExpandEnvironmentNames') }
+  if ($raw -and $prof) { return [Environment]::ExpandEnvironmentVariables([regex]::Replace($raw, '%USERPROFILE%', $prof.Replace('$', '$$'), 'IgnoreCase')) }
+  if ($prof) { return (Join-Path $prof 'Desktop') }
+  return $null
+}
 $users = @($me.Name)
 if ($ForUser) { $users += $ForUser }
+$recorded = (Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\GoXLRMini' -ErrorAction SilentlyContinue).InstalledFor
+if ($recorded) { $users += $recorded }
 foreach ($u in $users | Select-Object -Unique) {
   try {
     $sid = (New-Object Security.Principal.NTAccount($u)).Translate([Security.Principal.SecurityIdentifier]).Value
     Remove-ItemProperty "Registry::HKEY_USERS\$sid\Software\Microsoft\Windows\CurrentVersion\Run" -Name $name -ErrorAction SilentlyContinue
     $profile = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid" -ErrorAction SilentlyContinue).ProfileImagePath
     if ($profile) {
-      Remove-Item (Join-Path $profile ('Desktop\' + $name + '.lnk')) -Force -ErrorAction SilentlyContinue
+      foreach ($d in @((Get-UserDesktop $sid $profile), (Join-Path $profile 'Desktop')) | Where-Object { $_ } | Select-Object -Unique) { Remove-Item (Join-Path $d ($name + '.lnk')) -Force -ErrorAction SilentlyContinue }
       if ($RemoveData) { Remove-Item (Join-Path $profile ('AppData\Local\' + $name)) -Recurse -Force -ErrorAction SilentlyContinue }
     }
   } catch { }
