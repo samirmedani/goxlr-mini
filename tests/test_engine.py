@@ -146,6 +146,11 @@ class Engine(unittest.TestCase):
         self.assertEqual(self.sim.dev.errors, [])
         self.assertEqual(len(self.sim.dev.colour_map), 520)
 
+    def test_sous_mixages_initialises(self):
+        """Firmware 1.2.0.46+ : casque sur le mix A et chaque sortie sur le mix A, comme goxlr-utility."""
+        self.assertEqual(self.sim.dev.monitored_mix, 0)
+        self.assertEqual(self.sim.dev.channel_mixes, bytes([2, 4, 6, 8, 255, 255, 255, 255]))
+
     # ---------- mutes ----------
     def test_couper_du_stream_seulement(self):
         self.ctl.act("mute", {"channel": "Music", "muted": True, "target": "stream"})
@@ -215,6 +220,23 @@ class Engine(unittest.TestCase):
         self.sim.move_fader(2, 77)
         ch = self.ctl.state["faders"]["C"]
         self.assertTrue(wait_for(lambda: self.ctl.state["volumes"][ch] == 77, timeout=2))
+
+    def test_fader_fugace_ignore(self):
+        """Une valeur de fader lue une seule fois (Mini qui renvoie un « fader en haut » fugace) ne change rien."""
+        ch = self.ctl.state["faders"]["A"]
+        before = self.ctl.state["volumes"][ch]
+        with self.ctl.lock:
+            for v in (128, 255, 128, 128, 128, 128):
+                self.ctl._handle_inputs(0, [v, 128, 128, 128], time.monotonic())
+        self.assertEqual(self.ctl.state["volumes"][ch], before)
+
+    def test_faders_jamais_remontes_masques(self):
+        """Faders lus a 0 depuis la connexion : position inconnue, l'appli n'affiche pas « fader a 0 % »."""
+        with self.ctl.lock:
+            self.ctl._prev_pos, self.ctl.faders_seen = None, False
+            for _ in range(5):
+                self.ctl._handle_inputs(0, [0, 0, 0, 0], time.monotonic())
+        self.assertEqual(self.ctl.live["fader_positions"], [None] * 4)
 
     # ---------- routage ----------
     def test_vod_sans_musique(self):
@@ -289,12 +311,17 @@ class Engine(unittest.TestCase):
         self.assertTrue(cal["noise_peak_db"] + 3 <= gate <= cal["voice_low_db"], (gate, cal))
         self.assertLess(s["dsp"]["comp"]["threshold"], cal["voice_peak_db"])
         self.assertEqual(s["mic_cal"], cal)
-        self.assertTrue(any(n["lvl"] == "ok" for n in res["notes"]), res["notes"])
+        self.assertAlmostEqual(res["snr_db"], cal["voice_db"] - cal["noise_peak_db"], delta=0.11)
+        self.assertTrue(any("bruit de fond" in n["t"].lower() for n in res["notes"]), res["notes"])
         # les seuils suivent le gain : 6 dB de plus, gate et compresseur 6 dB plus haut
         self.ctl.act("mic", {"gain_db": s["mic"]["gain_db"] + 6})
         self.assertEqual(s["dsp"]["gate"]["threshold"], min(-10, gate + 6))
         self.ctl.act("mic-preset", {"name": "radio"})
         self.assertNotEqual(s["dsp"]["gate"]["threshold"], g.MIC_PRESETS["radio"]["dsp"]["gate"]["threshold"])
+        # une scene integree garde la voix mesuree
+        self.ctl.act("mic-preset", {"name": "studio"})
+        self.ctl.act("scene", {"name": "discord"})
+        self.assertEqual(s["mic_preset"], "studio")
 
     def test_regler_ma_voix_qui_sature(self):
         self.sim.dev.mic_input = "dynamic"

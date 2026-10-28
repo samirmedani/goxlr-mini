@@ -161,6 +161,13 @@ sealed class MainForm : Form
                 if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps)
                     try { Process.Start(new ProcessStartInfo(u.AbsoluteUri) { UseShellExecute = true }); } catch { }
             };
+            web.CoreWebView2.PermissionRequested += (_, e) =>
+            {
+                // « M'écouter » enregistre l'entree Chat Mic : seule la page locale du moteur a le micro, rien d'autre
+                bool local = e.Uri.StartsWith(Program.Url, StringComparison.OrdinalIgnoreCase);
+                e.State = local && e.PermissionKind == CoreWebView2PermissionKind.Microphone
+                    ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
+            };
             web.CoreWebView2.NavigationCompleted += async (_, e) =>
             {
                 if (!e.IsSuccess) { await Task.Delay(1500); await LoadUiAsync(); return; }

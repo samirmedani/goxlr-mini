@@ -356,6 +356,10 @@ select.inp option{background:#fff;color:var(--text)}
 .cal-line{display:flex;align-items:flex-start;gap:8px;margin-top:14px;color:var(--text2);font-size:12.5px;line-height:1.45}
 .cal-line svg{width:15px;height:15px;flex:none;margin-top:1px;color:var(--accent)}
 .cal-line.ok svg{color:var(--green)}
+.ls-field{margin-top:18px;text-align:left}
+.ls-actions{display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.ls-actions .pill{height:40px;padding:0 20px;font-size:14px}
+.ls-note{margin-top:12px;color:var(--text3);font-size:12.5px;line-height:1.45}
 .pill.listen-btn.on{background:var(--accent-soft);color:#0058b0;box-shadow:inset 0 0 0 .5px rgba(0,113,227,.25)}
 #offline{display:none;align-items:center;gap:12px;margin:-6px 0 20px;padding:12px 14px 12px 16px;border-radius:16px;background:rgba(255,59,48,.08);box-shadow:inset 0 0 0 .5px rgba(255,59,48,.22);color:#c4000f;font-weight:560}
 #offline.on{display:flex}
@@ -922,7 +926,7 @@ function buildMic() {
   gainField.appendChild(mic.gain.el);
   inCard.appendChild(gainField);
   var row = h("div", {"class": "btn-row"});
-  row.appendChild(h("button", {"class": "pill listen-btn", title: "Ta voix traitée dans le casque pendant 15 secondes", onclick: toggleListen}, svg("ear") + "M\u2019écouter"));
+  row.appendChild(h("button", {"class": "pill listen-btn", title: "Enregistre ta voix et réécoute-la, ou écoute-toi en direct", onclick: listenSheet}, svg("ear") + "M\u2019écouter"));
   row.appendChild(h("button", {"class": "pill primary", onclick: voiceIntro}, svg("sparkles") + "Régler ma voix"));
   inCard.appendChild(row);
   inCard.appendChild(h("div", {"class": "cal-line", id: "cal-line"}));
@@ -1595,6 +1599,7 @@ function openSettingsSheet() {
 var sheetState = null;
 function sheet(o) {
   var b = $("sheet-box");
+  if (sheetState && sheetState !== o && sheetState.onClose) sheetState.onClose();
   sheetState = o;
   b.classList.toggle("wide", !!o.wide);
   if (o.body) { b.innerHTML = ""; b.appendChild(o.body); }
@@ -1613,7 +1618,7 @@ function sheet(o) {
   b.appendChild(acts);
   $("sheet").classList.add("on");
 }
-function closeSheet() { $("sheet").classList.remove("on"); sheetState = null; }
+function closeSheet() { var o = sheetState; $("sheet").classList.remove("on"); sheetState = null; if (o && o.onClose) o.onClose(); }
 var jobSeen = null;
 function startJob(kind, params) {
   post(kind, params).then(function (r) { if (r && r.ok) { jobSeen = {kind: kind, id: r.job}; showJob({kind: kind, running: true, progress: 0, step: "Préparation…"}); } });
@@ -1733,19 +1738,147 @@ function showVoiceResult(r) {
     it.appendChild(b); notes.appendChild(it);
   });
   body.appendChild(notes);
-  sheet({wide: true, body: body, actions: [["M\u2019écouter", toggleListen, "listen-btn", true], ["Terminé", null, "primary"]]});
+  sheet({wide: true, body: body, actions: [["M\u2019écouter", listenSheet, "", true], ["Terminé", null, "primary"]]});
   refresh();
 }
-function toggleListen() {
-  if (!S || !S.connected) { toast("Branche la GoXLR pour t\u2019écouter"); return; }
-  var on = L && L.listening > 0;
-  if (!on && S.state.mutes.Mic) { toast("Ton micro est coupé", "Réactiver", function () { post("mute", {channel: "Mic", muted: false}).then(refresh); }); return; }
-  post("mic-listen", {seconds: on ? 0 : 15}).then(function (r) { if (r && r.ok && !on) toast("Tu t\u2019entends 15 secondes dans le casque, avec tes réglages"); });
+/* « M'écouter » : enregistrer puis reecouter (ce qu'entendent Discord et le stream), ou retour en direct */
+var LISTEN_LEVEL = 191, REC_SECONDS = 8, lsn = null;
+function micBlocked() {
+  if (!S || !S.connected) { toast("Branche la GoXLR pour t\u2019écouter"); return true; }
+  if (S.state.mutes.Mic) { toast("Ton micro est coupé", "Réactiver", function () { post("mute", {channel: "Mic", muted: false}).then(refresh); }); return true; }
+  return false;
+}
+function listenSheet() {
+  if (L && L.listening > 0) { post("mic-listen", {seconds: 0}); return; }     // retour en direct en cours : l'arreter
+  if (micBlocked()) return;
+  var body = h("div");
+  lsn = {body: body, mode: "idle"};
+  var me = lsn;
+  sheet({body: body, listen: true, actions: [], onClose: function () { stopListen(me); }});
+  paintListen();
+}
+function stopListen(o) {
+  o = o || lsn; if (!o) return;
+  o.cancelled = true;
+  clearInterval(o.timer);
+  if (o.mr && o.mr.state !== "inactive") try { o.mr.stop(); } catch (e) {}
+  if (o.stream) o.stream.getTracks().forEach(function (t) { t.stop(); });
+  if (o.audio) { o.audio.pause(); o.audio = null; }
+  if (o.mode === "live" && L && L.listening > 0) post("mic-listen", {seconds: 0});
+  if (o.url) URL.revokeObjectURL(o.url);
+  if (o === lsn) lsn = null;
+}
+function ringHtml(inner) {
+  return '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="7"/><circle id="ring-p" cx="50" cy="50" r="44" fill="none" stroke="#0071E3" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5" style="transition:stroke-dashoffset .2s"/></svg><div class="ico" id="ls-ico">' + inner + "</div></div>";
+}
+function lsButtons(list) {
+  var row = h("div", {"class": "ls-actions"});
+  list.forEach(function (a) { row.appendChild(h("button", {"class": "pill " + (a[2] || ""), onclick: a[1]}, a[0])); });
+  return row;
+}
+function paintListen(msg) {
+  var o = lsn; if (!o) return;
+  var b = o.body; b.innerHTML = "";
+  if (o.mode === "idle" || o.mode === "done") {
+    var done = o.mode === "done";
+    b.innerHTML = '<div class="ring soft"><div class="ico">' + svg(done ? "ok" : "ear") + "</div></div><h2>" + (done ? "Voilà ta voix" : "Écoute ta voix") + "</h2><p>" +
+      (msg ? esc(msg) : done ? "C\u2019est ce qu\u2019entendent tes amis sur Discord et ton stream. Si elle sonne loin ou résonne, rapproche-toi du micro (10 à 15 cm)."
+        : "Enregistre-toi quelques secondes, puis réécoute : tu entends ta voix traitée, comme tes amis sur Discord et ton stream.") + "</p>";
+    var acts = [["Fermer", function () { closeSheet(); }], ["En direct", startLive]];
+    if (done) acts.push(["Réécouter", playBack], ["Refaire", startRecording, "primary"]);
+    else acts.push(["Enregistrer " + REC_SECONDS + " s", startRecording, "primary"]);
+    b.appendChild(lsButtons(acts));
+  } else if (o.mode === "rec") {
+    b.innerHTML = ringHtml("") + "<h2>Parle comme en live</h2><p>Lis ce texte à voix haute :</p>" + '<div class="vs-read on">' + VOICE_READ + "</div>" +
+      '<div class="sheet-meter"><div class="meter" id="sheet-meter">' + new Array(35).join("<i></i>") + "</div></div>";
+    b.appendChild(lsButtons([["Annuler", function () { var x = lsn; stopListen(x); listenSheet(); }]]));
+  } else if (o.mode === "play") {
+    b.innerHTML = ringHtml(svg("audioLines")) + "<h2>Réécoute…</h2><p>Ta voix telle que la reçoivent Discord et ton stream.</p>";
+    b.appendChild(lsButtons([["Arrêter", function () { if (lsn && lsn.audio) lsn.audio.pause(); lsn.mode = "done"; paintListen(); }]]));
+  } else if (o.mode === "live") {
+    b.innerHTML = ringHtml("") + "<h2>Tu t\u2019entends en direct</h2><p>Avec un casque ouvert, ta vraie voix couvre une partie du retour : coupe la musique et monte le volume si besoin.</p>";
+    var f = h("div", {"class": "field ls-field"}, '<div class="field-top">Volume du retour<span id="ls-vol"></span></div>');
+    var sl = Slider({min: 64, max: 255, step: 1, value: o.level, colour: "#FF6961",
+      onInput: function (v) { o.level = v; $("ls-vol").textContent = pct(v) + " %"; },
+      onCommit: function (v) { o.level = v; post("mic-listen", {seconds: Math.max(1, (L && L.listening) || 30), level: v}); }});
+    f.appendChild(sl.el); b.appendChild(f);
+    b.appendChild(lsButtons([["Arrêter", function () { post("mic-listen", {seconds: 0}); lsn.mode = "idle"; paintListen(); }, "primary"]]));
+    $("ls-vol").textContent = pct(o.level) + " %";
+  }
+}
+function startLive() {
+  if (micBlocked() || !lsn) return;
+  lsn.mode = "live"; lsn.level = lsn.level || LISTEN_LEVEL; lsn.liveSeen = false;
+  paintListen();
+  post("mic-listen", {seconds: 30, level: lsn.level});
+}
+function chatMicStream() {
+  var md = navigator.mediaDevices;
+  if (!md || !md.getUserMedia || !window.MediaRecorder) return Promise.reject(new Error("L\u2019enregistrement n\u2019est pas disponible ici."));
+  var want = {echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2};
+  return md.enumerateDevices().then(function (list) {
+    if (list.some(function (d) { return d.label; })) return list;
+    return md.getUserMedia({audio: true}).then(function (s0) { s0.getTracks().forEach(function (t) { t.stop(); }); return md.enumerateDevices(); });
+  }).then(function (list) {
+    var mic = list.filter(function (d) { return d.kind === "audioinput" && /chat mic/i.test(d.label); })[0];
+    if (!mic && !S.sim) throw new Error("Windows ne montre pas l\u2019entrée « Chat Mic » de la GoXLR.");
+    if (mic) want.deviceId = {exact: mic.deviceId};
+    return md.getUserMedia({audio: want});
+  });
+}
+function startRecording() {
+  if (micBlocked() || !lsn) return;
+  var o = lsn;
+  if (o.audio) { o.audio.pause(); o.audio = null; }
+  o.mode = "rec"; o.cancelled = false; paintListen();
+  chatMicStream().then(function (stream) {
+    if (o.cancelled) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+    o.stream = stream;
+    var mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
+    var mr = new MediaRecorder(stream, mime ? {mimeType: mime, audioBitsPerSecond: 256000} : {});
+    var chunks = [];
+    mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = function () {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      clearInterval(o.timer);
+      if (o.cancelled || lsn !== o) return;
+      if (o.url) URL.revokeObjectURL(o.url);
+      o.url = URL.createObjectURL(new Blob(chunks, {type: mr.mimeType || "audio/webm"}));
+      playBack();
+    };
+    o.mr = mr; mr.start(); o.t0 = performance.now();
+    o.timer = setInterval(function () {
+      var t = (performance.now() - o.t0) / 1000, left = Math.max(0, REC_SECONDS - t);
+      var rp = $("ring-p"); if (rp) rp.setAttribute("stroke-dashoffset", 276.5 * (1 - Math.min(1, t / REC_SECONDS)));
+      var ico = $("ls-ico"), html = '<span class="num"><b>' + Math.max(1, Math.ceil(left)) + "<small>s</small></b></span>";
+      if (ico && ico._h !== html) { ico._h = html; ico.innerHTML = html; }
+      if (left <= 0 && mr.state === "recording") mr.stop();
+    }, 100);
+  }).catch(function (e) {
+    if (lsn !== o) return;
+    o.mode = "idle"; paintListen("Impossible d\u2019enregistrer : " + ((e && e.message) || e));
+  });
+}
+function playBack() {
+  var o = lsn; if (!o || !o.url) return;
+  if (o.audio) o.audio.pause();
+  var a = new Audio(o.url);
+  o.audio = a; o.mode = "play"; paintListen();
+  a.ontimeupdate = function () { var rp = $("ring-p"); if (rp && a.duration && isFinite(a.duration)) rp.setAttribute("stroke-dashoffset", 276.5 * (1 - a.currentTime / a.duration)); };
+  a.onended = function () { if (lsn === o && o.mode === "play") { o.mode = "done"; paintListen(); } };
+  a.play().catch(function () { if (lsn === o) { o.mode = "done"; paintListen("Lecture impossible : clique « Réécouter »."); } });
 }
 function liveListen() {
   var left = L && L.listening > 0 ? Math.ceil(L.listening) : 0;
   var t = left ? svg("stop") + "Arrêter · " + left + " s" : svg("ear") + "M\u2019écouter";
   document.querySelectorAll(".listen-btn").forEach(function (b) { if (b._t !== t) { b._t = t; b.innerHTML = t; b.classList.toggle("on", !!left); } });
+  if (lsn && lsn.mode === "live" && sheetState && sheetState.listen) {
+    if (left) lsn.liveSeen = true;
+    else if (lsn.liveSeen) { lsn.mode = "idle"; paintListen(); return; }
+    var rp = $("ring-p"); if (rp) rp.setAttribute("stroke-dashoffset", 276.5 * (1 - Math.min(1, (L.listening || 0) / 30)));
+    var ico = $("ls-ico"), html = left ? '<span class="num"><b>' + left + "<small>s</small></b></span>" : svg("ear");
+    if (ico && ico._h !== html) { ico._h = html; ico.innerHTML = html; }
+  }
 }
 
 

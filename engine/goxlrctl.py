@@ -69,7 +69,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.4.0"
+VERSION = "4.5.0"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -145,6 +145,7 @@ OUTPUTS = {  # nom -> (position gauche, position droite)
     "Headphones": (1, 3), "BroadcastMix": (5, 7), "ChatMic": (9, 11),
     "Sampler": (13, 15), "LineOut": (17, 19), "StreamMix2": (21, 23),
 }
+MIX_OUTPUT_ORDER = ["Headphones", "BroadcastMix", "ChatMic", "Sampler", "LineOut", "StreamMix2"]  # numeros de sortie (sous-mixages)
 # Carte couleurs format >= 1.1.8 sur Mini (520 octets) : cible -> (index de depart, nb couleurs)
 COLOUR_TARGETS = {
     "Global": (8, 2), "Accent": (10, 2),
@@ -505,6 +506,10 @@ class GoXLR:
     def mix2(self):
         return self.fw[:2] >= (1, 3)   # Stream Mix 2 : firmware Mini >= 1.3
 
+    @property
+    def submixes(self):
+        return tuple(self.fw) >= (1, 2, 0, 46)   # sous-mixages (mix A / B) : firmware Mini >= 1.2.0.46
+
     def open(self):
         if self.h is not None:
             return
@@ -622,6 +627,16 @@ class GoXLR:
 
     def set_volume(self, channel, value):
         self.command((0x806 << 12) | CHANNELS.index(channel), bytes([max(0, min(255, int(value)))]))
+
+    def set_monitored_mix(self, mix):
+        self.command(0x818 << 12, bytes([mix]))
+
+    def set_channel_mixes(self):
+        """Chaque sortie sur le mix A, aucune sur le mix B (pas de sous-mixage) : ce qu'envoie goxlr-utility a chaque
+        chargement de profil sur un firmware qui gere les sous-mixages."""
+        outs = ["BroadcastMix", "ChatMic", "Sampler", "LineOut"] + (["StreamMix2"] if self.mix2 else [])
+        mix_a = [MIX_OUTPUT_ORDER.index(o) * 2 for o in outs]
+        self.command(0x817 << 12, bytes(mix_a + [0xFF] * len(outs)))
 
     def set_channel_state(self, channel, muted):
         self.command((0x809 << 12) | CHANNELS.index(channel), bytes([1 if muted else 0]))
@@ -885,6 +900,7 @@ class Controller:
     l'etat sous self.lock et marquer ce qui doit partir (self._dirty)."""
 
     ABSENT_RETRY_S = 2.0                    # GoXLR absente : nouvel essai (et nouveau coup d'oeil a l'USB) toutes les 2 s
+    FADER_STABLE = 3                        # lectures identiques avant de croire une nouvelle position de fader
 
     def __init__(self, persist=True):
         self.lock = threading.RLock()
@@ -913,6 +929,8 @@ class Controller:
         self.heartbeat = time.monotonic()
         self._prev_mask = 0
         self._prev_pos = None
+        self._pos_cand, self._pos_count = [None] * 4, [0] * 4
+        self.faders_seen = False            # la GoXLR a deja remonte une vraie position de fader
         self._btn = {}
         self._bleep = False
         self.blink = {}
@@ -1012,7 +1030,7 @@ class Controller:
     def _plan(self, keys):
         s, d = self.state, self.dev
         if "all" in keys:
-            keys = ({"faders", "mic", "dsp", "lighting", "colours", "buttons"}
+            keys = ({"faders", "mic", "dsp", "lighting", "colours", "buttons", "submix"}
                     | {("volume", c) for c in CHANNELS} | {("mute", c) for c in CHANNELS}
                     | {("route", i) for i in INPUTS})
         ops = []
@@ -1023,6 +1041,10 @@ class Controller:
             if ("volume", c) in keys:
                 v = self._listen_level if c == "MicMonitor" and self._listen_until else s["volumes"][c]
                 ops.append((d.set_volume, (c, v)))
+        if "submix" in keys and d.submixes:
+            # comme goxlr-utility : le casque ecoute le mix A, chaque sortie est sur le mix A, puis le retour micro
+            mon = self._listen_level if self._listen_until else s["volumes"]["MicMonitor"]
+            ops += [(d.set_monitored_mix, (0,)), (d.set_channel_mixes, ()), (d.set_volume, ("MicMonitor", mon))]
         for c in CHANNELS:
             if ("mute", c) in keys:
                 ops.append((d.set_channel_state, (c, s["mutes"][c])))
@@ -1185,6 +1207,7 @@ class Controller:
             self._conn_mono = time.monotonic()
             self.last_error = None
             self._prev_mask, self._prev_pos, self._btn, self._bleep = 0, None, {}, False
+            self.faders_seen = False
             if self.connects:
                 self.reconnects += 1
             self.connects += 1
@@ -1351,9 +1374,20 @@ class Controller:
                 st["held"] = True
                 self._on_hold(name)
         changed = False
-        if self._prev_pos is not None:
+        if self._prev_pos is None:          # premiere lecture : la reference, rien a appliquer
+            self._prev_pos, self._pos_cand, self._pos_count = list(vols), list(vols), [self.FADER_STABLE] * 4
+            self.faders_seen = self.faders_seen or any(vols)
+        else:
+            # Une position ne compte qu'une fois stable : certaines Mini renvoient des valeurs fugaces (fader 1
+            # annonce en haut une seule lecture puis 0), qui couperaient une voie si on les suivait.
             for i in range(4):
-                if vols[i] != self._prev_pos[i]:   # fader physique bouge : l'appareil a deja change le volume
+                if vols[i] == self._pos_cand[i]:
+                    self._pos_count[i] += 1
+                else:
+                    self._pos_cand[i], self._pos_count[i] = vols[i], 1
+                if self._pos_count[i] >= self.FADER_STABLE and vols[i] != self._prev_pos[i]:
+                    self._prev_pos[i] = vols[i]      # fader physique bouge : l'appareil a deja change le volume
+                    self.faders_seen = True
                     ch = s["faders"][FADERS[i]]
                     if s["volumes"][ch] != vols[i]:
                         s["volumes"][ch] = vols[i]
@@ -1361,8 +1395,7 @@ class Controller:
         if changed:
             self.version += 1
             self._save_dirty = True
-        self._prev_pos = list(vols)
-        self.live["fader_positions"] = list(vols)
+        self.live["fader_positions"] = list(self._prev_pos) if self.faders_seen else [None] * 4
         self.live["pressed"] = [n for n, b in BUTTON_BITS.items() if mask & (1 << b)]
 
     def _on_down(self, name):
@@ -1586,7 +1619,7 @@ class Controller:
             return {"ok": True, "job": self._start_job(action, p)}
         elif action == "mic-listen":
             secs = max(0.0, min(30.0, float(p.get("seconds", 15))))
-            self._listen_level = _clamp(p.get("level", 128), 0, 255)
+            self._listen_level = _clamp(p.get("level", 191), 0, 255)
             self._listen_until = time.monotonic() + secs if secs else 0.0
             self._mark(("volume", "MicMonitor"), ("route", "Microphone"), bump=False)
             return {"ok": True, "seconds": secs}
@@ -1633,7 +1666,8 @@ class Controller:
             sc = SCENES[name]
             s["faders"] = dict(sc["faders"])
             s["routing"] = copy.deepcopy(sc["routing"])
-            if with_mic and sc.get("mic_preset"):
+            # une voix mesuree (« Régler ma voix ») est personnelle : la scene ne change alors que routage et volumes
+            if with_mic and sc.get("mic_preset") and not self._cal_for():
                 s["dsp"] = self._preset_dsp(sc["mic_preset"])
                 s["mic_preset"] = sc["mic_preset"]
             if s["lighting"]["theme"] == "voies":

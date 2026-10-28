@@ -1,5 +1,18 @@
 # Nouveautés
 
+## 4.5.0
+
+**Nouveau**
+- « M'écouter » : enregistre-toi 8 secondes puis réécoute ta voix telle que l'entendent Discord et ton stream,
+  ou écoute-toi en direct dans le casque avec un réglage de volume.
+
+**Corrigé**
+- Le moteur envoie maintenant le réglage des sous-mixages (casque et sorties sur le mix A) sur les firmwares
+  Mini 1.2.0.46 et plus récents, comme goxlr-utility. Il manquait pour le retour micro dans le casque.
+- Une position de fader lue une seule fois ne change plus le volume d'une voie, et l'appli n'affiche plus
+  « Fader physique à 0 % » quand la GoXLR ne remonte pas la position de ses faders.
+- Les scènes intégrées ne remplacent plus le préréglage de ta voix une fois qu'elle a été mesurée.
+
 ## 4.4.0
 
 **Nouveau**

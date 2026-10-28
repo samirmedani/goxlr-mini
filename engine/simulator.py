@@ -68,6 +68,8 @@ class FakeDevice:
         self.fader_display = {}
         self.animation = None
         self.phantom = False
+        self.monitored_mix = None           # sous-mixages : etat d'origine tant que rien n'est envoye
+        self.channel_mixes = None
         self.mic_type = "dynamic"
         self.gains = {"dynamic": 0, "condenser": 0, "jack": 0}
         self.fader_pos = [128, 128, 128, 128]
@@ -201,6 +203,15 @@ class FakeDevice:
             return b""
         if cmd == 0x816:
             self.animation = tuple(body)
+            return b""
+        if cmd == 0x818:
+            self.monitored_mix = body[0]
+            return b""
+        if cmd == 0x817:
+            want = 10 if self.mix2 else 8
+            if len(body) != want:
+                self.errors.append(f"sous-mixages {len(body)} octets au lieu de {want}")
+            self.channel_mixes = bytes(body)
             return b""
         self.errors.append(f"commande inconnue {cid:#x}")
         return b""
