@@ -1298,6 +1298,8 @@ class Controller:
                     self._note_usb(seen)
                     try:
                         self.connect()
+                        if self.usb not in (None, "mini"):
+                            self._note_usb("mini")      # branchee entre le coup d'oeil a l'USB et la connexion
                     except Exception as e:
                         absent = isinstance(e, DeviceError) and "Aucune GoXLR" in str(e)
                         msg = describe(e)

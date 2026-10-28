@@ -12,6 +12,7 @@
 - Une position de fader lue une seule fois ne change plus le volume d'une voie, et l'appli n'affiche plus
   « Fader physique à 0 % » quand la GoXLR ne remonte pas la position de ses faders.
 - Les scènes intégrées ne remplacent plus le préréglage de ta voix une fois qu'elle a été mesurée.
+- Le diagnostic USB ne reste plus sur « appareil en échec » quand la GoXLR revient juste à ce moment-là.
 
 ## 4.4.0
 
