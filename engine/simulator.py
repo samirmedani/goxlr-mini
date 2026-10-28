@@ -51,6 +51,9 @@ OUTPUT_POS = {"Headphones": 1, "BroadcastMix": 5, "ChatMic": 9, "Sampler": 13, "
 class FakeDevice:
     """Ce que le firmware de la Mini a recu et applique."""
 
+    # sensibilite de chaque micro par rapport a un dynamique (dB) : un statique sort bien plus fort
+    SENSITIVITY = {"dynamic": 0.0, "condenser": 18.0, "jack": 8.0}
+
     def __init__(self, firmware=(1, 2, 1, 49), serial="SIM-GOXLR-MINI"):
         self.firmware = firmware
         self.serial = serial
@@ -72,7 +75,8 @@ class FakeDevice:
         self.timed = {}                     # bouton -> fin de l'appui (monotonic)
         self.mic_input = "dynamic"          # micro branche : dynamic, condenser, jack ou None
         self.talking = False
-        self.voice_db = -30.0               # crete de la voix a 40 dB de gain
+        self.voice_db = -30.0               # crete de la voix a 40 dB de gain (micro dynamique)
+        self.noise_db = -66.0               # bruit de la piece a 40 dB de gain (micro dynamique)
         self.errors = []
         self.commands = 0
         self.index_resets = 0
@@ -100,7 +104,8 @@ class FakeDevice:
         return m
 
     def mic_db(self):
-        """Niveau micro selon le micro branche, l'entree choisie et le gain."""
+        """Niveau micro selon le micro branche, l'entree choisie et le gain. La voix varie d'une syllabe a l'autre
+        (jusqu'a 24 dB sous ses cretes) ; le bruit de la piece monte avec le gain, comme la voix."""
         t = self.mic_input
         typ = self.mic_type
         if t is None:
@@ -110,11 +115,11 @@ class FakeDevice:
             xlr_ok = False
         if not (xlr_ok or (t == "jack" and typ == "jack")):
             return None
-        gain = self.gains[typ]
+        gain = self.gains[typ] - 40 + self.SENSITIVITY[t]
         if self.talking:
-            db = self.voice_db + (gain - 40) - self.rng.random() * 6
+            db = self.voice_db + gain - self.rng.random() ** 2 * 24
         else:
-            db = -66.0 + (gain - 40) * 0.25 + self.rng.random() * 1.5
+            db = self.noise_db + gain + self.rng.random() * 1.5
         return max(-72.0, min(0.0, db))
 
     def mic_raw(self):
@@ -240,8 +245,13 @@ class FakeTusb:
         self.enumerate_calls = 0
         self.enumerate_violations = 0
         self.rng = random.Random(7)
+        self.unplugged_usb = "none"         # ce que « Windows » voit debranche : "none" (cable qui ne fait que charger), "failed"...
 
     # -- commandes du banc de test --
+    def usb_scan(self):
+        """Equivalent simule de goxlrctl.usb_scan() : la liste des appareils USB vue par Windows."""
+        return "mini" if self.plugged else self.unplugged_usb
+
     def unplug(self):
         with self.lock:
             self.plugged = False

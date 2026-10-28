@@ -1,5 +1,22 @@
 # Nouveautés
 
+## 4.4.0
+
+**Nouveau**
+- « Régler ma voix », sur la page Micro : en vingt secondes, l'appli trouve ton micro (elle essaie le 48 V pour
+  un micro statique), écoute ta voix puis le silence de ta pièce, et cale le gain, le noise gate et le
+  compresseur sur ces mesures. Elle signale aussi ce qui fait de l'écho (Discord renvoyé vers Discord, enceintes,
+  retour micro trop fort) avec une correction en un clic.
+- Préréglage « Studio » pour les micros statiques : voix nette et posée, graves allégés, présence, de-esser. Une
+  fois ta voix mesurée, chaque préréglage place ses seuils par rapport à elle, et ils suivent le gain.
+- « M'écouter » : ta voix traitée dans le casque pendant 15 secondes, puis tout revient comme avant.
+- Quand la GoXLR n'apparaît pas, l'appli dit ce que Windows voit sur l'USB : rien (câble qui ne fait que
+  charger, port non relié), un appareil qui n'arrive pas à se présenter, ou une GoXLR complète.
+
+**Corrigé**
+- Le moteur répond tout de suite même quand le pilote USB tarde à se charger (au réveil du PC par exemple), et
+  le diagnostic indique l'étape où il bloque.
+
 ## 4.3.0
 
 **Nouveau**

@@ -327,6 +327,36 @@ select.inp option{background:#fff;color:var(--text)}
 .sheet-box.wide{width:680px;text-align:left}
 .sheet-box.wide h2{margin-top:0}
 .sheet-box.wide .sheet-actions{justify-content:flex-end}
+/* assistant « Régler ma voix » */
+.vs-steps{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+.vs-steps span{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 5px;border-radius:999px;background:rgba(118,118,128,.08);color:var(--text3);font-size:12.5px;font-weight:600;transition:background .25s,color .25s}
+.vs-steps i{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;background:rgba(118,118,128,.16);color:var(--text2);font-style:normal;font-size:11px;font-weight:700;transition:background .25s,color .25s}
+.vs-steps i svg{width:12px;height:12px;stroke-width:3}
+.vs-steps span.on{background:var(--accent-soft);color:#0058b0}
+.vs-steps span.on i{background:var(--accent);color:#fff}
+.vs-steps span.done{color:var(--text2)}
+.vs-steps span.done i{background:var(--green);color:#fff}
+.ring .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.ring .num b{font-size:34px;font-weight:300;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ring .num small{font-size:15px;font-weight:400;margin-left:2px;color:var(--text3);letter-spacing:0}
+.ring.soft{width:84px;height:84px;border-radius:50%;background:var(--accent-soft)}
+.ring.soft .ico svg{width:36px;height:36px}
+.vs-read{display:none;margin-top:16px;padding:14px 16px;border-radius:14px;background:rgba(118,118,128,.07);color:var(--text);font-size:15px;line-height:1.55;text-align:left}
+.vs-read.on{display:block}
+.vs-status{margin-top:10px;min-height:18px;color:var(--text3);font-size:12.5px}
+.vs-tips{display:flex;flex-direction:column;gap:8px;margin-top:18px;text-align:left}
+.vs-tips div{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(118,118,128,.07);font-size:13.5px;line-height:1.4}
+.vs-tips svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.diag-grid.vs-grid{grid-template-columns:repeat(3,1fr)}
+.vs-grid em{display:block;margin-top:1px;color:var(--text3);font-size:11.5px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vs-notes{margin-top:14px}
+.vs-notes .advice{align-items:flex-start;margin-bottom:6px}
+.vs-notes .advice p{margin-top:6px;color:var(--text);font-size:13.5px}
+.vs-notes .advice .pill[disabled]{opacity:.6;pointer-events:none}
+.cal-line{display:flex;align-items:flex-start;gap:8px;margin-top:14px;color:var(--text2);font-size:12.5px;line-height:1.45}
+.cal-line svg{width:15px;height:15px;flex:none;margin-top:1px;color:var(--accent)}
+.cal-line.ok svg{color:var(--green)}
+.pill.listen-btn.on{background:var(--accent-soft);color:#0058b0;box-shadow:inset 0 0 0 .5px rgba(0,113,227,.25)}
 #offline{display:none;align-items:center;gap:12px;margin:-6px 0 20px;padding:12px 14px 12px 16px;border-radius:16px;background:rgba(255,59,48,.08);box-shadow:inset 0 0 0 .5px rgba(255,59,48,.22);color:#c4000f;font-weight:560}
 #offline.on{display:flex}
 #offline .pill{margin-left:auto;height:30px;padding:0 12px;color:var(--text)}
@@ -488,7 +518,14 @@ var ICONS = { /* icones Lucide (ISC), https://lucide.dev */
   plus: '<path d="M5 12h14"/> <path d="M12 5v14"/>',
   refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/> <path d="M21 3v5h-5"/> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/> <path d="M8 16H3v5"/>',
   settings: '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/> <circle cx="12" cy="12" r="3"/>',
-  activity: '<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>'
+  activity: '<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>',
+  micVocal: '<path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/> <path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928 2.356-6 2-2.072-.356-2.775-3.369-1.5-4.5"/> <circle cx="16" cy="7" r="5"/>',
+  sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/> <path d="M20 2v4"/> <path d="M22 4h-4"/> <circle cx="4" cy="20" r="2"/>',
+  audioLines: '<path d="M2 10v3"/> <path d="M6 6v11"/> <path d="M10 3v18"/> <path d="M14 8v7"/> <path d="M18 5v13"/> <path d="M22 10v3"/>',
+  ear: '<path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"/> <path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"/>',
+  volumeX: '<path d="M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z"/> <path d="m16.5 14.5 5-5"/> <path d="m16.5 9.5 5 5"/>',
+  stop: '<circle cx="12" cy="12" r="10"/> <rect x="9" y="9" width="6" height="6" rx="1"/>',
+  usb: '<circle cx="10" cy="7" r="1"/> <circle cx="4" cy="20" r="1"/> <path d="M4.7 19.3 19 5"/> <path d="m21 3-3 1 2 2Z"/> <path d="M9.26 7.68 5 12l2 5"/> <path d="m10 14 5 2 3.5-3.5"/> <path d="m18 12 1-1 1 1-1 1Z"/>'
 };
 var LABELS = {Mic:"Micro", LineIn:"Entrée ligne", Console:"Console", System:"Système", Game:"Jeu", Chat:"Chat", Sample:"Samples", Music:"Musique", Headphones:"Casque", MicMonitor:"Retour micro", LineOut:"Sortie ligne"};
 var IN_MAP = {Microphone:"Mic", LineIn:"LineIn", Console:"Console", System:"System", Game:"Game", Chat:"Chat", Music:"Music", Samples:"Sample"};
@@ -499,8 +536,8 @@ var MUTE_VERB = {all: "Couper", stream: "Couper du stream", chat: "Couper de Dis
 var MUTED_TXT = {all: "Coupé", stream: "Coupé du stream", chat: "Coupé de Discord", phones: "Coupé du casque", lineout: "Coupé des enceintes"};
 var MIC_MODES = [["toggle", "Bascule"], ["hold", "Maintenir = coupé"], ["ptt", "Maintenir = parler"]];
 var MIC_TYPE_LABELS = {dynamic:"Dynamique", condenser:"Statique +48 V", jack:"Jack 3,5 mm"};
-var PRESET_ICONS = {naturel:"leaf", radio:"radio", stream:"BroadcastMix", podcast:"Mic", "anti-bruit":"shield", brut:"circle"};
-var PRESET_COLOURS = {naturel:"#30D158", radio:"#FF9F0A", stream:"#BF5AF2", podcast:"#FF375F", "anti-bruit":"#64D2FF", brut:"#8E8E93"};
+var PRESET_ICONS = {studio:"micVocal", naturel:"leaf", radio:"radio", stream:"BroadcastMix", podcast:"Mic", "anti-bruit":"shield", brut:"circle"};
+var PRESET_COLOURS = {studio:"#5E5CE6", naturel:"#30D158", radio:"#FF9F0A", stream:"#BF5AF2", podcast:"#FF375F", "anti-bruit":"#64D2FF", brut:"#8E8E93"};
 var SCENE_ICONS = {streaming:"BroadcastMix", "stream-safe":"shield", gaming:"Game", discord:"Chat", podcast:"Mic", ecoute:"Headphones"};
 var SCENE_COLOURS = {streaming:"#BF5AF2", "stream-safe":"#30D158", gaming:"#30D158", discord:"#5E5CE6", podcast:"#FF375F", ecoute:"#FF9F0A"};
 var ANIM_LABELS = {"none":"Aucune", "retro-rainbow":"Arc-en-ciel rétro", "rainbow-dark":"Arc-en-ciel doux", "rainbow-bright":"Arc-en-ciel vif", "simple":"Respiration", "ripple":"Ondulation"};
@@ -576,7 +613,7 @@ function liveLoop() {
   api("/api/live?level=1").then(function (l) {
     if (bootId && l.boot && l.boot !== bootId) { location.reload(); return; }
     bootId = l.boot || bootId;
-    L = l; setOnline(true, l.connected, l.health);
+    L = l; setOnline(true, l.connected, l.health, l.usb);
     var k = l.live.fader_positions.join() + "|" + l.live.pressed.join() + "|" + l.live.mic_db;
     if (k !== liveKey) { liveKey = k; liveChanged = true; }
     if (l.v !== V && !pending) return refresh();
@@ -687,11 +724,18 @@ var HEALTH_TXT = {
   blocked: ["", "Le pilote USB ne répond plus. Le moteur se relance tout seul dans quelques secondes…"],
   starting: ["info", "Recherche de la GoXLR…"]
 };
-function setOnline(daemon, dev, health) {
+// ce que Windows voit sur l'USB quand le pilote ne trouve pas la GoXLR
+var USB_TXT = {
+  none: "Windows ne voit pas la GoXLR sur l’USB. Si elle est allumée, son câble ne fait sans doute que charger : reprends le câble d’origine, sur un port à l’arrière du PC.",
+  failed: "Un appareil USB n’arrive pas à se présenter à Windows, sans doute la GoXLR : essaie un autre câble ou un autre port.",
+  full: "Une GoXLR complète est branchée : ce logiciel pilote seulement la GoXLR Mini.",
+  mini: "Windows voit la GoXLR, mais son pilote ne la trouve pas encore. Si ça dure, débranche-la puis rebranche-la."
+};
+function setOnline(daemon, dev, health, usb) {
   var o = $("offline");
   var msg = null, kind = "";
   if (!daemon) msg = "Le moteur GoXLR ne répond pas. Relance automatique en cours…";
-  else if (health && health !== "ok" && HEALTH_TXT[health]) { kind = HEALTH_TXT[health][0]; msg = HEALTH_TXT[health][1]; }
+  else if (health && health !== "ok" && HEALTH_TXT[health]) { kind = HEALTH_TXT[health][0]; msg = (health === "absent" && USB_TXT[usb]) || HEALTH_TXT[health][1]; }
   else if (!dev) msg = "GoXLR déconnectée. Reconnexion automatique dès qu’elle revient…";
   o.classList.toggle("on", !!msg);
   o.classList.toggle("warn", kind === "warn");
@@ -878,9 +922,10 @@ function buildMic() {
   gainField.appendChild(mic.gain.el);
   inCard.appendChild(gainField);
   var row = h("div", {"class": "btn-row"});
-  row.appendChild(h("button", {"class": "pill", onclick: function () { startJob("detect-mic", {}); }}, svg("radar") + "Détecter"));
-  row.appendChild(h("button", {"class": "pill primary", onclick: function () { startJob("auto-gain", {}); }}, svg("wand") + "Gain auto"));
+  row.appendChild(h("button", {"class": "pill listen-btn", title: "Ta voix traitée dans le casque pendant 15 secondes", onclick: toggleListen}, svg("ear") + "M\u2019écouter"));
+  row.appendChild(h("button", {"class": "pill primary", onclick: voiceIntro}, svg("sparkles") + "Régler ma voix"));
   inCard.appendChild(row);
+  inCard.appendChild(h("div", {"class": "cal-line", id: "cal-line"}));
   left.appendChild(inCard);
   var muteCard = h("div", {"class": "card"});
   var ms = h("div", {"class": "row-switch", style: "padding-top:0"}, '<div><b>Micro coupé</b><small id="mic-mute-sub">Coupé partout : personne ne t\u2019entend.</small></div>');
@@ -1055,12 +1100,16 @@ function renderMic() {
   mic.compThr.set(st.dsp.comp.threshold); mic.compRatio.set(st.dsp.comp.ratio); mic.compMake.set(st.dsp.comp.makeup);
   mic.deess.set(st.dsp.deesser); mic.bleep.set(st.bleep_db);
   $("mic-state").textContent = mms ? MUTED_TXT[mms] : MIC_TYPE_LABELS[st.mic.type];
-  var HINTS = {dynamic: "<b>Micro dynamique</b> (SM7B, PodMic…) : vise 45 à 60 dB de gain, puis lance le gain auto en parlant normalement.",
-    condenser: "<b>Micro statique</b> : il capte toute la pièce. Le préréglage Anti-bruit coupe le clavier et le ventilateur.",
+  var HINTS = {dynamic: "<b>Micro dynamique</b> (SM7B, PodMic…) : il demande 45 à 60 dB de gain. « Régler ma voix » le trouve pour toi.",
+    condenser: "<b>Micro statique</b> : il reçoit le 48 V et capte toute la pièce. Le préréglage Studio, calé par « Régler ma voix », garde ta voix nette et coupe le bruit entre tes phrases.",
     jack: "<b>Micro de casque</b> : 20 à 30 dB suffisent souvent. Le préréglage Stream le rend plus clair."};
   mic.hintTxt = HINTS[st.mic.type];
   $("preset-hint").innerHTML = st.mic_preset === "custom" ? "Réglage personnalisé" : "";
   var ph = $("preset-tip"); if (ph) ph.innerHTML = HINTS[st.mic.type];
+  var cal = micCal(), cl = $("cal-line");
+  var calHtml = cal ? svg("ok") + "<span>Voix mesurée le " + frDate(cal.t * 1000) + " : bruit de la pièce " + dbTxt(cal.noise_peak_db + st.mic.gain_db - cal.gain_db) + ", ta voix " + Math.round(cal.voice_db - cal.noise_peak_db) + " dB au-dessus.</span>"
+    : svg("info") + "<span>Pas encore mesurée : « Régler ma voix » cale le gain, le noise gate et le compresseur sur ta voix et ta pièce, en 20 secondes.</span>";
+  if (cl && cl._h !== calHtml) { cl._h = calHtml; cl.innerHTML = calHtml; cl.classList.toggle("ok", !!cal); }
   if (mic.tab === "eq") drawEq();
 }
 var meterShown = -72.2, meterPeak = -72.2, peakT = 0, clipT = -1e9;
@@ -1409,13 +1458,15 @@ function renderScenes() {
 }
 function advices() {
   var s = S.state, a = [];
-  if (!S.connected) return [{lvl: "warn", t: "GoXLR déconnectée", d: "Vérifie le câble USB. L\u2019appli se reconnecte toute seule."}];
+  if (!S.connected) return [{lvl: "warn", t: "GoXLR déconnectée", d: (L && USB_TXT[L.usb]) || "Vérifie le câble USB. L\u2019appli se reconnecte toute seule."}];
+  var voice = function () { voiceIntro(); return Promise.resolve(); };
   if (s.mutes.Mic) a.push({lvl: "warn", t: "Ton micro est coupé", d: "Personne ne t\u2019entend en ce moment.", label: "Réactiver", fn: function () { return post("mute", {channel: "Mic", muted: false}); }});
   else if (s.partial.Mic) a.push({lvl: "warn", t: "Micro " + MUTED_TXT[s.partial.Mic].toLowerCase(), d: "Une partie de ton public ne t\u2019entend pas.", label: "Réactiver", fn: function () { return post("mute", {channel: "Mic", muted: false}); }});
-  if (L && L.live.mic_db <= -72 && !s.mutes.Mic) a.push({lvl: "warn", t: "Aucun son du micro", d: "Branche ton micro, puis lance la détection pour le régler.", label: "Détecter", fn: function () { startJob("detect-mic", {}); return Promise.resolve(); }});
+  if (L && L.live.mic_db <= -72 && !s.mutes.Mic) a.push({lvl: "warn", t: "Aucun son du micro", d: s.mic.type === "condenser" ? "Vérifie le câble XLR, puis lance « Régler ma voix »." : "Un micro statique ne marche qu\u2019avec le 48 V : « Régler ma voix » le détecte et l\u2019allume.", label: "Régler ma voix", fn: voice});
+  else if (!micCal()) a.push({t: "Ta voix n\u2019est pas encore réglée", d: "20 secondes pour caler le gain, le noise gate et le compresseur sur ta voix et ta pièce.", label: "Régler ma voix", fn: voice});
   if (s.routing.Chat.ChatMic) a.push({lvl: "warn", t: "Écho dans Discord", d: "Le chat est renvoyé vers le chat : tes amis s\u2019entendent eux-mêmes.", label: "Corriger", fn: function () { return post("route", {input: "Chat", output: "ChatMic", enabled: false}); }});
   if (s.routing.System.BroadcastMix) a.push({t: "Tes notifications passent en live", d: "Les sons Windows sont envoyés au stream.", label: "Les retirer", fn: function () { return post("route", {input: "System", output: "BroadcastMix", enabled: false}); }});
-  if (s.mic.type === "dynamic" && s.mic.gain_db < 40) a.push({t: "Gain bas pour un micro dynamique", d: "Il est à " + s.mic.gain_db + " dB ; un micro dynamique demande souvent 45 à 60 dB.", label: "Gain automatique", fn: function () { startJob("auto-gain", {}); return Promise.resolve(); }});
+  if (s.mic.type === "dynamic" && s.mic.gain_db < 40 && !micCal()) a.push({t: "Gain bas pour un micro dynamique", d: "Il est à " + s.mic.gain_db + " dB ; un micro dynamique demande souvent 45 à 60 dB.", label: "Régler ma voix", fn: voice});
   if (s.routing.Microphone.Headphones && s.volumes.MicMonitor > 64) a.push({t: "Tu t\u2019entends dans le casque", d: "Retour micro à " + pct(s.volumes.MicMonitor) + " %. Pratique pour se contrôler, gênant sinon.", label: "Couper le retour", fn: function () { return post("volume", {channel: "MicMonitor", value: 0}); }});
   if (s.mic_preset === "brut" || (!s.dsp.gate.enabled && s.mic_preset === "custom")) a.push({t: "Voix sans traitement", d: "Un préréglage rend ta voix plus claire et coupe le bruit de fond.", label: "Essayer « Stream »", fn: function () { return post("mic-preset", {name: "stream"}); }});
   var onF = S.meta.faders.map(function (f) { return s.faders[f]; });
@@ -1486,7 +1537,8 @@ function openDiag() {
       var cells = [["Appareil", hl.connected ? "Connectée" : hl.present === false ? "Absente" : "Hors ligne"], ["Firmware", hl.firmware || "—"], ["Connectée depuis", fmtDur(hl.device_uptime_s)], ["Moteur lancé depuis", fmtDur(hl.engine_uptime_s)],
         ["Commandes", (s.commands || 0).toLocaleString("fr-FR")], ["Index actuel", hl.command_index + " / 65535"], ["Remises à zéro", s.index_resets || 0], ["Resynchros", s.resyncs || 0],
         ["Reconnexions", hl.reconnects], ["Relances moteur", hl.engine_restarts], ["Boucle USB", hl.loop_age_ms + " ms"], ["En attente", hl.pending]];
-      body.innerHTML = '<div class="diag-head">' + chipIco(st[2], st[1]) + "<div><h2>" + st[0] + "</h2><p class=\"muted-txt\">Moteur v" + hl.version + (hl.simulated ? " · appareil simulé" : "") + (hl.supervised ? " · surveillé par son superviseur" : "") + (hl.last_error && !hl.connected ? " · " + esc(hl.last_error) : "") + "</p></div></div>" +
+      var why = !hl.connected && USB_TXT[hl.usb] && hl.usb !== "mini" ? USB_TXT[hl.usb] : hl.last_error && !hl.connected ? hl.last_error : "";
+      body.innerHTML = '<div class="diag-head">' + chipIco(st[2], st[1]) + "<div><h2>" + st[0] + "</h2><p class=\"muted-txt\">Moteur v" + hl.version + (hl.simulated ? " · appareil simulé" : "") + (hl.supervised ? " · surveillé par son superviseur" : "") + (why ? " · " + esc(why) : "") + "</p></div></div>" +
         '<div class="diag-grid">' + cells.map(function (c) { return "<div><small>" + c[0] + "</small><b>" + esc(c[1]) + "</b></div>"; }).join("") + "</div>" +
         '<div class="diag-log">' + esc((hl.log || []).slice(-14).join("\n")) + "</div>";
       if (hl.simulated) body.appendChild(simTools());
@@ -1508,6 +1560,7 @@ function simTools() {
   b("Appui mute 1", "press", {button: "Fader1Mute", ms: 150}); b("Appui long mute 2", "press", {button: "Fader2Mute", ms: 900});
   b("Bouton micro", "press", {button: "MicrophoneMute", ms: 150}); b("Bleep", "press", {button: "Bleep", ms: 600});
   b("Parler", "talk", {on: true}); b("Silence", "talk", {on: false});
+  b("Micro statique", "mic-input", {input: "condenser"}); b("Micro dynamique", "mic-input", {input: "dynamic"});
   b("Débrancher", "unplug"); b("Rebrancher", "plug"); b("Bloquer l’USB 20 s", "hang", {seconds: 20});
   return box;
 }
@@ -1563,9 +1616,10 @@ function sheet(o) {
 function closeSheet() { $("sheet").classList.remove("on"); sheetState = null; }
 var jobSeen = null;
 function startJob(kind, params) {
-  post(kind, params).then(function (r) { if (r && r.ok) { jobSeen = kind; showJob({kind: kind, running: true, progress: 0, step: "Préparation…"}); } });
+  post(kind, params).then(function (r) { if (r && r.ok) { jobSeen = {kind: kind, id: r.job}; showJob({kind: kind, running: true, progress: 0, step: "Préparation…"}); } });
 }
 function showJob(j) {
+  if (j.kind === "voice-setup") return showVoiceJob(j);
   if (j.running) {
     var title = j.kind === "detect-mic" ? "Détection du micro" : "Réglage automatique du gain";
     var text = j.kind === "auto-gain" ? "<b>Parle normalement</b>, comme en live, pendant quelques secondes." : (j.step || "");
@@ -1595,8 +1649,103 @@ function showJob(j) {
 }
 function liveJob() {
   if (!L || !L.job || !jobSeen) return;
+  if (jobSeen.id != null && L.job.started !== jobSeen.id) return;     // resultat d'une analyse precedente
   showJob(L.job);
   if (!L.job.running) { jobSeen = null; refresh(); }
+}
+
+/* ---------- assistant « Régler ma voix » ---------- */
+function micCal() { var c = S && S.state.mic_cal; return c && c.type === S.state.mic.type ? c : null; }
+function dbTxt(v) { v = Math.round(v); return (v < 0 ? "\u2212" : "") + Math.abs(v) + " dB"; }
+var VOICE_READ = "« Salut tout le monde, bienvenue sur le live ! Aujourd\u2019hui je teste mon nouveau réglage de micro. Je parle comme d\u2019habitude, et quand c\u2019est drôle, je ris franchement. »";
+var VOICE_STEPS = [["detect", "Micro"], ["voice", "Ta voix"], ["silence", "Silence"]];
+var VOICE_PHASE = {
+  detect: ["radar", "Dis quelques mots", "J\u2019essaie l\u2019entrée XLR, avec et sans l\u2019alimentation 48 V, puis le jack."],
+  voice: ["audioLines", "Parle comme en live", "Lis ce texte à voix haute, à ton volume habituel :"],
+  silence: ["volumeX", "Silence…", "Ne parle plus et laisse le son du casque comme d\u2019habitude : je mesure ce que le micro entend entre tes phrases."],
+  apply: ["sparkles", "Presque fini", "Gain, noise gate et compresseur se calent sur tes mesures."]
+};
+var MIC_TYPE_LONG = {condenser: "Statique · 48 V", dynamic: "Dynamique", jack: "Jack 3,5 mm"};
+function voiceIntro() {
+  if (!S || !S.connected) { toast("Branche la GoXLR pour régler ta voix"); return; }
+  if (S.state.mutes.Mic) { toast("Ton micro est coupé", "Réactiver", function () { post("mute", {channel: "Mic", muted: false}).then(refresh); }); return; }
+  var body = h("div");
+  body.innerHTML = '<div class="ring soft"><div class="ico">' + svg("sparkles") + "</div></div><h2>Régler ma voix</h2>" +
+    "<p>Vingt secondes : je trouve ton micro, j\u2019écoute ta voix puis le silence de ta pièce. Ensuite je règle le gain, le noise gate et le compresseur pour toi.</p>" +
+    '<div class="vs-tips">' + [["Mic", "Place-toi comme en live, à 10–15 cm du micro, face à lui."], ["Headphones", "Garde ton casque et le son du PC comme d\u2019habitude."], ["audioLines", "Parle à ton volume normal quand je te le demande."]]
+      .map(function (t) { return "<div>" + svg(t[0]) + "<span>" + t[1] + "</span></div>"; }).join("") + "</div>";
+  sheet({body: body, actions: [["Plus tard", null], ["Commencer", function () { startJob("voice-setup", {}); }, "primary"]]});
+}
+function showVoiceJob(j) {
+  if (!j.running) {
+    if (j.error) { sheet({icon: "warn", title: "Réglage interrompu", text: esc(j.error), actions: [["Fermer", null], ["Recommencer", function () { startJob("voice-setup", {}); }, "primary"]]}); return; }
+    return showVoiceResult(j.result || {});
+  }
+  var ph = VOICE_PHASE[j.phase] ? j.phase : "detect", p = j.progress || 0;
+  if (!(sheetState && sheetState.voice)) {
+    var body = h("div");
+    body.innerHTML = '<div class="vs-steps" id="vs-steps">' + VOICE_STEPS.map(function (s, i) { return '<span><i data-n="' + (i + 1) + '">' + (i + 1) + "</i>" + s[1] + "</span>"; }).join("") + "</div>" +
+      '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="7"/><circle id="ring-p" cx="50" cy="50" r="44" fill="none" stroke="#0071E3" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5" style="transition:stroke-dashoffset .2s"/></svg><div class="ico" id="vs-ico"></div></div>' +
+      '<h2 id="vs-title"></h2><p id="vs-help"></p><div class="vs-read" id="vs-read">' + VOICE_READ + "</div>" +
+      '<div class="sheet-meter"><div class="meter" id="sheet-meter">' + new Array(35).join("<i></i>") + '</div></div><div class="vs-status" id="vs-status"></div>';
+    sheet({job: true, voice: true, body: body, actions: [["Annuler", function () { post("job-cancel"); }]]});
+  }
+  var idx = ph === "apply" ? 3 : VOICE_STEPS.map(function (s) { return s[0]; }).indexOf(ph);
+  document.querySelectorAll("#vs-steps span").forEach(function (e, i) {
+    var st = i < idx ? "done" : i === idx ? "on" : "";
+    if (e._st === st) return;
+    e._st = st; e.className = st;
+    var n = e.querySelector("i"); n.innerHTML = st === "done" ? svg("check") : n.dataset.n;
+  });
+  // anneau : avancement de l'etape ; secondes restantes pendant l'ecoute de la voix et du silence
+  var span = {detect: [0, .3, 0], voice: [.32, .78, 10], silence: [.78, .95, 4.7], apply: [.95, 1, 0]}[ph];
+  var f = clamp((p - span[0]) / (span[1] - span[0]), 0, 1);
+  var rp = $("ring-p"); if (rp) rp.setAttribute("stroke-dashoffset", 276.5 * (1 - f));
+  var ico = $("vs-ico"), left = span[2] ? Math.max(1, Math.ceil((1 - f) * span[2])) : 0;
+  var icoHtml = left ? '<span class="num"><b>' + left + "<small>s</small></b></span>" : svg(VOICE_PHASE[ph][0]);
+  if (ico._h !== icoHtml) { ico._h = icoHtml; ico.innerHTML = icoHtml; }
+  if ($("vs-title").textContent !== VOICE_PHASE[ph][1]) { $("vs-title").textContent = VOICE_PHASE[ph][1]; $("vs-help").textContent = VOICE_PHASE[ph][2]; }
+  $("vs-read").classList.toggle("on", ph === "voice");
+  if ($("vs-status").textContent !== (j.step || "")) $("vs-status").textContent = j.step || "";
+}
+function showVoiceResult(r) {
+  if (!r.cal) { closeSheet(); return; }
+  var c = r.cal, preset = S.meta.mic_presets[r.preset];
+  var ratio = (r.comp.ratio_x >= 10 ? r.comp.ratio_x.toFixed(0) : r.comp.ratio_x.toFixed(1)).replace(".", ",") + ":1";
+  var cells = [["Micro", MIC_TYPE_LONG[r.type] || r.type, ""], ["Gain", r.gain_db + " dB", "crêtes de ta voix vers \u221212 dB"],
+    ["Ta voix", dbTxt(c.voice_db), "crêtes à " + dbTxt(c.voice_peak_db)], ["Bruit de la pièce", dbTxt(c.noise_peak_db), Math.round(r.snr_db) + " dB sous ta voix"],
+    ["Noise gate", dbTxt(r.gate.threshold), "baisse le bruit de " + Math.abs(r.gate.attenuation_db) + " dB"], ["Compresseur", dbTxt(r.comp.threshold), ratio + " · compensation +" + r.comp.makeup + " dB"]];
+  var body = h("div");
+  body.innerHTML = '<div class="diag-head">' + chipIco("ok", "#30D158") + "<div><h2>Ta voix est réglée</h2><p class=\"muted-txt\">Préréglage " + esc(frLabel(preset ? preset.label : r.preset)) + ", calé sur ta voix et ta pièce. Écoute-toi pour vérifier.</p></div></div>" +
+    '<div class="diag-grid vs-grid">' + cells.map(function (x) { return "<div><small>" + x[0] + "</small><b>" + esc(x[1]) + "</b>" + (x[2] ? "<em>" + esc(x[2]) + "</em>" : "") + "</div>"; }).join("") + "</div>";
+  var notes = h("div", {"class": "vs-notes"});
+  (r.notes || []).forEach(function (n) {
+    var it = h("div", {"class": "advice"});
+    it.innerHTML = chipIco(n.lvl === "ok" ? "ok" : n.lvl === "warn" ? "warn" : "bulb", n.lvl === "ok" ? "#30D158" : n.lvl === "warn" ? "#FF9F0A" : "#64D2FF");
+    var b = h("div", {}, "<p>" + esc(n.t) + "</p>");
+    if (n.fix) {
+      var btn = h("button", {"class": "pill"}, esc(n.fix.label));
+      btn.addEventListener("click", function () {
+        post(n.fix.action, n.fix.body).then(function (x) { if (x && x.ok) { btn.disabled = true; btn.innerHTML = svg("check") + "Corrigé"; refresh(); } });
+      });
+      b.appendChild(btn);
+    }
+    it.appendChild(b); notes.appendChild(it);
+  });
+  body.appendChild(notes);
+  sheet({wide: true, body: body, actions: [["M\u2019écouter", toggleListen, "listen-btn", true], ["Terminé", null, "primary"]]});
+  refresh();
+}
+function toggleListen() {
+  if (!S || !S.connected) { toast("Branche la GoXLR pour t\u2019écouter"); return; }
+  var on = L && L.listening > 0;
+  if (!on && S.state.mutes.Mic) { toast("Ton micro est coupé", "Réactiver", function () { post("mute", {channel: "Mic", muted: false}).then(refresh); }); return; }
+  post("mic-listen", {seconds: on ? 0 : 15}).then(function (r) { if (r && r.ok && !on) toast("Tu t\u2019entends 15 secondes dans le casque, avec tes réglages"); });
+}
+function liveListen() {
+  var left = L && L.listening > 0 ? Math.ceil(L.listening) : 0;
+  var t = left ? svg("stop") + "Arrêter · " + left + " s" : svg("ear") + "M\u2019écouter";
+  document.querySelectorAll(".listen-btn").forEach(function (b) { if (b._t !== t) { b._t = t; b.innerHTML = t; b.classList.toggle("on", !!left); } });
 }
 
 
@@ -1754,6 +1903,7 @@ function frame(t) {
       $("mic-clip").classList.toggle("on", t - clipT < 1500);
     }
     var sm = $("sheet-meter"); if (sm) meterPaint(sm, meterShown);
+    if (page === "mic" || sheetState) liveListen();
     if (liveChanged) {
       if (page === "mixer") liveMixer();
       if (page === "light" && built.light && t - lastDev > 100) { lt.dev.innerHTML = deviceSvg(); lastDev = t; liveChanged = false; }

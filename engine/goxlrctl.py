@@ -69,7 +69,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.3.0"
+VERSION = "4.4.0"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -170,6 +170,10 @@ FADER_STYLES = {"two-colour": (0, 0), "gradient": (1, 0), "meter": (0, 1), "grad
 ANIMATIONS = {"none": 5, "retro-rainbow": 0, "rainbow-dark": 1, "rainbow-bright": 2, "simple": 3, "ripple": 4}
 WATERFALL = {"down": 0, "up": 1, "off": 2}
 RECOMMENDED_GAIN = {"dynamic": 50, "condenser": 30, "jack": 25}
+VOICE_TARGET_DB = -12.0       # cretes de la voix visees a l'entree : de la marge pour les rires et les cris
+CLIP_DB = -1.5                # au-dessus, l'entree sature
+# GoXLR vues par Windows sur l'USB (sans passer par leur pilote)
+USB_IDS = {"mini": "USB\\VID_1220&PID_8FE4\\", "full": "USB\\VID_1220&PID_8FE0\\"}
 # Mute "vers une sortie" (goxlr-utility MuteFunction) : la voie reste active ailleurs
 MUTE_TARGETS = {"all": [], "stream": ["BroadcastMix", "StreamMix2"], "chat": ["ChatMic"],
                 "phones": ["Headphones"], "lineout": ["LineOut"]}
@@ -186,6 +190,8 @@ def _dsp(eq=(0, 0, 0, 0, 0, 0), gate=(True, -55, 40, 0, 19), comp=(-12, 6, 1, 9,
             "deesser": deesser}
 
 MIC_PRESETS = {
+    "studio": {"label": "Studio", "desc": "Voix de studio, nette et posée. Faite pour les micros statiques.",
+               "dsp": _dsp((-3, -2, -2, 0, 2, 1), (True, -45, 96, 0, 20), (-24, 8, 3, 11, 6), 35)},
     "naturel": {"label": "Naturel", "desc": "Ta voix telle quelle, juste stabilisée.",
                 "dsp": _dsp()},
     "radio": {"label": "Radio", "desc": "Voix pleine et présente, comme à l’antenne.",
@@ -199,7 +205,59 @@ MIC_PRESETS = {
     "brut": {"label": "Brut", "desc": "Aucun traitement : le son du micro sans retouche.",
              "dsp": _dsp((0, 0, 0, 0, 0, 0), (False, -59, 0, 0, 19), (0, 0, 1, 9, 0), 0)},
 }
-MIC_TYPE_PRESET = {"dynamic": "radio", "condenser": "anti-bruit", "jack": "stream"}
+MIC_TYPE_PRESET = {"dynamic": "radio", "condenser": "studio", "jack": "stream"}
+# Avec une voix mesuree (assistant « Régler ma voix »), chaque preregle place ses seuils par rapport a cette voix et
+# au bruit de la piece : decalage du noise gate et du compresseur (dB), attenuation du gate (None : selon le bruit
+# mesure), part du gain perdu en compression rendue par le gain de compensation.
+PRESET_FIT = {
+    "studio": {"gate": 0, "att": None, "comp": 0, "makeup": 0.7},
+    "radio": {"gate": 0, "att": None, "comp": -3, "makeup": 0.8},
+    "stream": {"gate": 0, "att": None, "comp": -1, "makeup": 0.7},
+    "podcast": {"gate": -2, "att": 80, "comp": 1, "makeup": 0.6},
+    "naturel": {"gate": -4, "att": 70, "comp": 4, "makeup": 0.5},
+    "anti-bruit": {"gate": 3, "att": 100, "comp": 0, "makeup": 0.7},
+}
+CAL_LEVELS = ("noise_db", "noise_peak_db", "voice_low_db", "voice_db", "voice_peak_db")
+
+def gate_threshold(noise_peak, voice_low):
+    """Seuil du noise gate : un peu au-dessus du bruit de la piece (et de ce que le micro entend du casque), bien
+    sous les passages doux de la voix pour ne pas couper les fins de mots. Niveaux d'entree en dB."""
+    lo, hi = noise_peak + 6, voice_low - 6
+    if lo > hi:                       # bruit presque aussi fort que la voix : au milieu
+        return (noise_peak + voice_low) / 2
+    return min(noise_peak + max(6.0, min(12.0, 0.4 * (voice_low - noise_peak))), hi)
+
+RESIDUAL_NOISE_DB = -75.0     # bruit de la piece une fois le noise gate ferme (apres compensation) : inaudible
+
+def gate_att_percent(need_db, least_db=15):
+    """Plus douce attenuation du noise gate (en % GoXLR) qui retire au moins need_db : un gate trop fort fait
+    « respirer » la piece entre les phrases. Au-dela de 30 dB, la GoXLR ne sait que couper completement."""
+    need = max(float(least_db), need_db)
+    for p in range(100):
+        if -gate_attenuation(p) >= need:
+            return p
+    return 100
+
+def fit_dsp(name, cal=None, gain_db=None):
+    """Reglages d'un preregle. Avec une voix mesuree pour ce micro, le noise gate et le compresseur se placent par
+    rapport a la voix et au bruit mesures (decales du gain actuel) ; sinon, valeurs d'usine."""
+    d = copy.deepcopy(MIC_PRESETS[name]["dsp"])
+    fit = PRESET_FIT.get(name)
+    if not (cal and fit) or gain_db is None:
+        return d
+    shift = gain_db - cal["gain_db"]
+    noise, low, med, peak = (cal[k] + shift for k in ("noise_peak_db", "voice_low_db", "voice_db", "voice_peak_db"))
+    d["gate"]["threshold"] = _clamp(gate_threshold(noise, low) + fit["gate"], -59, -10)
+    thr = _clamp(med - 4 + fit["comp"], -40, -6)
+    d["comp"]["threshold"] = thr
+    d["comp"]["makeup"] = _clamp(max(0.0, peak - thr) * (1 - 1 / RATIOS[d["comp"]["ratio"]]) * fit["makeup"], 0, 12)
+    # le gate ferme doit descendre le bruit (releve ensuite par la compensation) sous RESIDUAL_NOISE_DB
+    d["gate"]["attenuation"] = fit["att"] if fit["att"] is not None else \
+        gate_att_percent(max(noise, -72.2) + d["comp"]["makeup"] - RESIDUAL_NOISE_DB)
+    return d
+
+def _pct(sorted_vals, q):
+    return sorted_vals[min(len(sorted_vals) - 1, max(0, int(len(sorted_vals) * q)))]
 
 def _routing(**over):
     on = lambda *outs: {o: o in outs for o in OUTPUTS}
@@ -363,6 +421,39 @@ def _check(what, code):
     if code != 0:
         raise TusbError(what, code)
 
+_cfgmgr = None
+
+def usb_scan():
+    """Ce que Windows voit sur l'USB, sans passer par le pilote GoXLR (aucun risque pour ses handles) : "mini",
+    "full" (GoXLR complete, non geree), "failed" (un appareil USB n'arrive pas a se presenter : cable ou port),
+    "none". None quand l'information manque (autre systeme, simulateur, erreur)."""
+    global _cfgmgr
+    if SIMULATE:
+        scan = getattr(_lib, "usb_scan", None)      # fausse GoXLR : elle dit ce que Windows verrait
+        return scan() if scan else None
+    if not IS_WINDOWS:
+        return None
+    try:
+        if _cfgmgr is None:
+            _cfgmgr = ctypes.WinDLL("cfgmgr32")
+        flags = 0x1 | 0x100            # CM_GETIDLIST_FILTER_ENUMERATOR | CM_GETIDLIST_FILTER_PRESENT
+        size = ctypes.c_ulong(0)
+        if _cfgmgr.CM_Get_Device_ID_List_SizeW(ctypes.byref(size), "USB", flags) != 0 or not size.value:
+            return None
+        buf = ctypes.create_unicode_buffer(size.value)
+        if _cfgmgr.CM_Get_Device_ID_ListW("USB", buf, size, flags) != 0:
+            return None
+        ids = [i.upper() for i in ctypes.wstring_at(buf, size.value).split("\0") if i]
+    except Exception:
+        return None
+    if any(i.startswith(USB_IDS["mini"]) for i in ids):
+        return "mini"
+    if any(i.startswith(USB_IDS["full"]) for i in ids):
+        return "full"
+    if any(i.startswith("USB\\VID_0000&") or "DESCRIPTOR_FAILURE" in i for i in ids):
+        return "failed"
+    return "none"
+
 def _u16str(buf):
     out = []
     for c in buf:
@@ -401,13 +492,13 @@ class GoXLR:
     INDEX_MAX = 0xFFFF         # index de commande sur 16 bits
 
     def __init__(self):
-        _load()
         self.h = None
         self.count = 0
         self.serial = None
         self.firmware = None
         self.fw = (0, 0, 0, 0)
         self.busy_since = None
+        self.stage = None          # etape en cours a l'ouverture (diagnostic si le pilote bloque)
         self.stats = {"commands": 0, "stalls": 0, "resyncs": 0, "index_resets": 0, "opens": 0}
 
     @property
@@ -417,6 +508,10 @@ class GoXLR:
     def open(self):
         if self.h is not None:
             return
+        if _lib is None:               # charge ici, dans la boucle USB : l'interface repond deja si le pilote bloque
+            self.stage = "chargement du pilote USB"
+            _load()
+        self.stage = "recherche de la GoXLR"
         _check("EnumerateDevices", _lib.TUSBAUDIO_EnumerateDevices())  # handle ferme : sans risque
         for idx in range(_lib.TUSBAUDIO_GetDeviceCount()):
             h = _u32(0)
@@ -426,18 +521,22 @@ class GoXLR:
             if _lib.TUSBAUDIO_GetDeviceInstanceIdString(h.value, buf, 256) == 0 and "VID_1220" in _u16str(buf):
                 self.h = h.value
                 self.stats["opens"] += 1
+                self.stage = "ouverture de la GoXLR"
                 try:
                     self._activate()
                     self._read_info()
                 except Exception:
                     self.close()
                     raise
+                finally:
+                    self.stage = None
                 return
             _lib.TUSBAUDIO_CloseDevice(h.value)
+        self.stage = None
         raise DeviceError("Aucune GoXLR trouvée par le pilote")
 
     def close(self):
-        if self.h is not None:
+        if self.h is not None and _lib is not None:
             try:
                 _lib.TUSBAUDIO_CloseDevice(self.h)
             finally:
@@ -603,6 +702,7 @@ def default_state():
         "mic": {"type": "dynamic", "gain_db": 30},
         "dsp": copy.deepcopy(MIC_PRESETS["naturel"]["dsp"]),
         "mic_preset": "naturel",
+        "mic_cal": None,                                # voix mesuree par l'assistant « Régler ma voix »
         "bleep_db": -10,
         "lighting": {"theme": "voies", "animation": "none", "mod1": 39, "mod2": 39, "waterfall": "off",
                      "fader_style": {f: "gradient" for f in FADERS}},
@@ -634,6 +734,18 @@ def normalize_dsp(src, base=None):
     if "deesser" in src:
         d["deesser"] = _clamp(src["deesser"], 0, 100)
     return d
+
+def normalize_cal(src):
+    """Mesures de l'assistant « Régler ma voix » (niveaux d'entree en dB au gain indique), ou None."""
+    if not isinstance(src, dict) or src.get("type") not in MIC_TYPES:
+        return None
+    try:
+        cal = {"type": src["type"], "gain_db": _clamp(src["gain_db"], 0, 72), "t": float(src.get("t") or 0)}
+        for k in CAL_LEVELS:
+            cal[k] = round(max(-80.0, min(0.0, float(src[k]))), 1)
+    except (KeyError, TypeError, ValueError):
+        return None
+    return cal
 
 def _norm_app(name):
     n = str(name or "").strip().lower()
@@ -717,6 +829,7 @@ def normalize_state(src):
         st["dsp"] = normalize_dsp(src["dsp"])
     if src.get("mic_preset") in MIC_PRESETS or src.get("mic_preset") == "custom":
         st["mic_preset"] = src["mic_preset"]
+    st["mic_cal"] = normalize_cal(src.get("mic_cal"))
     if "bleep_db" in src:
         st["bleep_db"] = _clamp(src["bleep_db"], -36, 0)
     li = src.get("lighting") or {}
@@ -771,6 +884,8 @@ class Controller:
     """Etat + boucle USB. Seul device_loop() parle a l'appareil ; le reste ne fait que modifier
     l'etat sous self.lock et marquer ce qui doit partir (self._dirty)."""
 
+    ABSENT_RETRY_S = 2.0                    # GoXLR absente : nouvel essai (et nouveau coup d'oeil a l'USB) toutes les 2 s
+
     def __init__(self, persist=True):
         self.lock = threading.RLock()
         self.dev = GoXLR()
@@ -802,7 +917,10 @@ class Controller:
         self._bleep = False
         self.blink = {}
         self._gain_override = None
+        self._listen_until = 0.0            # « M'écouter » : retour micro temporaire dans le casque
+        self._listen_level = 0
         self._force_reconnect = False
+        self.usb = None                     # ce que Windows voit sur l'USB (usb_scan), pour expliquer une absence
         self.errors = deque(maxlen=15)
         self.connects = 0
         self.reconnects = 0
@@ -837,6 +955,31 @@ class Controller:
         self.wake.set()
         return self._want
 
+    # -- voix mesuree (assistant) --
+    def _cal_for(self, mtype=None):
+        cal = self.state.get("mic_cal")
+        return cal if cal and cal["type"] == (mtype or self.state["mic"]["type"]) else None
+
+    def _preset_dsp(self, name):
+        return fit_dsp(name, self._cal_for(), self.state["mic"]["gain_db"])
+
+    USB_NOTES = {
+        "none": "Windows ne voit aucune GoXLR sur l’USB : si elle est allumée, son câble ne fait peut-être que charger, "
+                "ou le port n’est pas relié au PC",
+        "failed": "Un appareil USB n’arrive pas à se présenter à Windows (câble ou port abîmé ?) : c’est peut-être la GoXLR",
+        "full": "Une GoXLR complète est branchée : GoXLR Mini ne pilote que la Mini",
+        "mini": "Windows voit la GoXLR sur l’USB",
+    }
+
+    def _note_usb(self, seen):
+        with self.lock:
+            if seen == self.usb:
+                return
+            before, self.usb = self.usb, seen
+            self.version += 1
+        if seen in ("none", "failed", "full") or (seen == "mini" and before in ("none", "failed")):
+            log(self.USB_NOTES[seen])
+
     # -- routage effectif (mutes partiels et VOD) --
     def vod_output(self):
         return "StreamMix2" if self.dev.mix2 else "Sampler"
@@ -859,6 +1002,8 @@ class Controller:
                     r[out] = False
                 if t == "stream" and vod_on:
                     r[vod] = False
+        if inp == "Microphone" and self._listen_until and not s["mutes"]["Mic"]:
+            r["Headphones"] = True          # « M'écouter » : ta voix traitee dans le casque, quelques secondes
         return r
 
     # -- plan d'envoi --
@@ -876,7 +1021,8 @@ class Controller:
                 ops.append((d.set_fader, (f, s["faders"][f])))
         for c in CHANNELS:
             if ("volume", c) in keys:
-                ops.append((d.set_volume, (c, s["volumes"][c])))
+                v = self._listen_level if c == "MicMonitor" and self._listen_until else s["volumes"][c]
+                ops.append((d.set_volume, (c, v)))
         for c in CHANNELS:
             if ("mute", c) in keys:
                 ops.append((d.set_channel_state, (c, s["mutes"][c])))
@@ -1123,6 +1269,10 @@ class Controller:
             if not self.connected:
                 self._fail_calls("GoXLR non connectée")
                 if now >= next_try:
+                    self.dev.stage = "liste USB de Windows"
+                    seen = usb_scan()
+                    self.dev.stage = None
+                    self._note_usb(seen)
                     try:
                         self.connect()
                     except Exception as e:
@@ -1136,7 +1286,7 @@ class Controller:
                             if changed:
                                 self.version += 1
                         if absent:
-                            delay = 2.0
+                            delay = self.ABSENT_RETRY_S
                             log("GoXLR absente (éteinte ou débranchée) : nouvel essai toutes les 2 s")
                         else:
                             self.fail_streak += 1
@@ -1149,6 +1299,10 @@ class Controller:
                 self.wake.clear()
                 continue
             try:
+                if self._listen_until and time.monotonic() > self._listen_until:
+                    with self.lock:
+                        self._listen_until = 0.0
+                        self._mark(("volume", "MicMonitor"), ("route", "Microphone"), bump=False)
                 self._run_calls()
                 self.flush()
                 self.poll_once(self._want_level(tick))
@@ -1384,8 +1538,12 @@ class Controller:
             gain = p.get("gain_db")
             if gain is None and mtype != s["mic"]["type"] and p.get("suggest_gain"):
                 gain = RECOMMENDED_GAIN[mtype]
+            before = dict(s["mic"])
             s["mic"] = {"type": mtype, "gain_db": _clamp(gain if gain is not None else s["mic"]["gain_db"], 0, 72)}
             self._mark("mic")
+            if s["mic"] != before and s["mic_preset"] in MIC_PRESETS and self._cal_for():
+                s["dsp"] = self._preset_dsp(s["mic_preset"])      # seuils toujours places par rapport a ta voix
+                self._mark("dsp")
         elif action == "dsp":
             s["dsp"] = normalize_dsp(p, s["dsp"])
             if "bleep_db" in p:
@@ -1396,7 +1554,7 @@ class Controller:
             name = p["name"]
             if name not in MIC_PRESETS:
                 raise ValueError(f"préréglage micro inconnu: {name}")
-            s["dsp"] = copy.deepcopy(MIC_PRESETS[name]["dsp"])
+            s["dsp"] = self._preset_dsp(name)
             s["mic_preset"] = name
             self._mark("dsp")
         elif action == "scene":
@@ -1424,8 +1582,14 @@ class Controller:
             normalize_settings(s, {"auto_scenes": p})
             self.auto_active = "?"          # re-evaluation au prochain passage
             self._auto_seen = True
-        elif action in ("detect-mic", "auto-gain"):
-            self._start_job(action, p)
+        elif action in ("detect-mic", "auto-gain", "voice-setup"):
+            return {"ok": True, "job": self._start_job(action, p)}
+        elif action == "mic-listen":
+            secs = max(0.0, min(30.0, float(p.get("seconds", 15))))
+            self._listen_level = _clamp(p.get("level", 128), 0, 255)
+            self._listen_until = time.monotonic() + secs if secs else 0.0
+            self._mark(("volume", "MicMonitor"), ("route", "Microphone"), bump=False)
+            return {"ok": True, "seconds": secs}
         elif action == "job-cancel":
             if self.job:
                 self.job["cancel"] = True
@@ -1470,7 +1634,7 @@ class Controller:
             s["faders"] = dict(sc["faders"])
             s["routing"] = copy.deepcopy(sc["routing"])
             if with_mic and sc.get("mic_preset"):
-                s["dsp"] = copy.deepcopy(MIC_PRESETS[sc["mic_preset"]]["dsp"])
+                s["dsp"] = self._preset_dsp(sc["mic_preset"])
                 s["mic_preset"] = sc["mic_preset"]
             if s["lighting"]["theme"] == "voies":
                 self._theme_colours()
@@ -1501,6 +1665,7 @@ class Controller:
         self.job = {"kind": kind, "running": True, "progress": 0.0, "step": "", "result": None,
                     "error": None, "started": time.time()}
         threading.Thread(target=self._run_job, args=(kind, dict(p)), daemon=True).start()
+        return self.job["started"]
 
     def _job_update(self, **kw):
         with self.lock:
@@ -1541,8 +1706,10 @@ class Controller:
         try:
             if kind == "detect-mic":
                 result = self._detect_mic(bool(p.get("phantom")))
+            elif kind == "voice-setup":
+                result = self._voice_setup(p)
             else:
-                result = self._auto_gain(float(p.get("target_db", -12)), float(p.get("seconds", 6)))
+                result = self._auto_gain(float(p.get("target_db", VOICE_TARGET_DB)), float(p.get("seconds", 6)))
             self._job_update(running=False, progress=1.0, result=result, step="Terminé")
         except JobCancelled:
             self._job_update(running=False, error="Analyse annulée.")
@@ -1593,9 +1760,160 @@ class Controller:
         with self.lock:
             s["mic"]["gain_db"] = new
             gen = self._mark("mic")
+            if s["mic_preset"] in MIC_PRESETS and self._cal_for():
+                s["dsp"] = self._preset_dsp(s["mic_preset"])      # les seuils suivent le gain
+                gen = self._mark("dsp")
         self._wait_applied(gen)
         return {"old_gain_db": old, "new_gain_db": new, "voice_peak_db": peak, "target_db": target_db,
                 "message": f"Gain réglé de {old} à {new} dB."}
+
+    # -- assistant « Régler ma voix » --
+    def _listen_input(self, mtype, gain, settle, seconds, p0, p1):
+        """Niveaux a l'entree pour un type de micro (donc avec ou sans 48 V) et un gain donnes."""
+        self._set_gain_and_wait(mtype, gain)
+        mid = p0 + (p1 - p0) * settle / (settle + seconds)
+        self._sample(settle, p0, mid)
+        vals = sorted(self._sample(seconds, mid, p1)) or [-72.2]
+        return {"low_db": _pct(vals, 0.2), "floor_db": _pct(vals, 0.5), "peak_db": vals[-1], "gain_db": gain}
+
+    def _find_mic(self, p0, p1):
+        """Quel micro est branche ? XLR sans puis avec 48 V (un micro statique ne fonctionne qu'alimente), puis jack.
+        Le 48 V est sans danger pour les micros dynamiques et statiques."""
+        span = (p1 - p0) / 3
+        settle = 2.5 if self.state["mic"]["type"] == "condenser" else 0.8      # le 48 V met un instant a retomber
+        self._job_update(step="Entrée XLR…")
+        dyn = self._listen_input("dynamic", 40, settle, 1.4, p0, p0 + span)
+        self._job_update(step="Entrée XLR avec l’alimentation 48 V…")
+        cond = self._listen_input("condenser", 40, 2.0, 1.4, p0 + span, p0 + 2 * span)
+        levels = {"dynamic": dyn, "condenser": cond}
+        if cond["peak_db"] > -70.5 and (cond["low_db"] >= dyn["low_db"] + 8 or cond["floor_db"] >= dyn["floor_db"] + 8):
+            return "condenser", levels
+        if dyn["peak_db"] > -70.5:
+            return "dynamic", levels
+        self._job_update(step="Entrée jack 3,5 mm…")
+        levels["jack"] = self._listen_input("jack", 30, 0.6, 1.4, p0 + 2 * span, p1)
+        return ("jack" if levels["jack"]["peak_db"] > -70.5 else None), levels
+
+    def _sample_voice(self, seconds, p0, p1):
+        """Comme _sample, mais s'arrete tot si l'entree sature : le gain est alors trop fort."""
+        vals, t0, clips, seen = [], time.time(), 0, None
+        while time.time() - t0 < seconds:
+            if self.job.get("cancel"):
+                raise JobCancelled()
+            if not self.connected:
+                raise DeviceError("GoXLR déconnectée pendant le réglage")
+            v, t = self.live["mic_db"], self.live.get("level_t")
+            if v is not None:
+                vals.append(v)
+                if t != seen and v >= CLIP_DB:
+                    clips += 1
+                    if clips >= 3 and time.time() - t0 < 5:
+                        return vals, True
+                seen = t
+            self._job_update(progress=round(p0 + (p1 - p0) * (time.time() - t0) / seconds, 3))
+            time.sleep(0.04)
+        return vals, False
+
+    def _voice_setup(self, p):
+        """Assistant « Régler ma voix » : quel micro (avec le 48 V si besoin), niveau de ta voix, bruit de ta piece,
+        puis gain, noise gate et compresseur places par rapport a ces mesures."""
+        s = self.state
+        if p.get("detect", True):
+            self._job_update(phase="detect", step="Je cherche ton micro…")
+            mtype, _levels = self._find_mic(0.0, 0.3)
+            if not mtype:
+                raise DeviceError("Aucun micro détecté. Vérifie son câble, dis quelques mots pendant la recherche, "
+                                  "puis recommence.")
+        else:
+            mtype = s["mic"]["type"]
+        gain = s["mic"]["gain_db"] if mtype == s["mic"]["type"] else RECOMMENDED_GAIN[mtype]
+        voice_s = max(1.0, min(20.0, float(p.get("voice_seconds", 10))))
+        silence_s = max(1.0, min(10.0, float(p.get("silence_seconds", 4))))
+        # 1. ta voix, au gain de depart ; si l'entree sature : 10 dB de moins et on recommence (deux fois au plus)
+        self._job_update(phase="voice", step="J’écoute ta voix…")
+        for attempt in range(3):
+            self._set_gain_and_wait(mtype, gain)
+            vals, clipped = self._sample_voice(voice_s, 0.32, 0.78)
+            if not (clipped and attempt < 2 and gain > 0):
+                break
+            gain = max(0, gain - 10)
+            self._job_update(step=f"Ta voix sature : gain baissé à {gain} dB, continue de parler.")
+        pauses = _pct(sorted(vals), 0.1) if vals else -72.2
+        heard = sorted(v for v in vals if v > max(pauses + 10, -66))
+        if len(heard) < max(10, len(vals) * 0.25):          # ta voix sur au moins un quart de l'ecoute
+            raise DeviceError("Je ne t’ai pas assez entendu. Parle plus près du micro (10 à 15 cm) et recommence.")
+        peak = _pct(heard, 0.95)
+        new_gain = _clamp(gain + VOICE_TARGET_DB - peak, 0, 72)
+        shift = new_gain - gain
+        # 2. le silence, au gain final : la piece, le PC, et ce que le micro entend du casque
+        self._job_update(phase="silence", step="J’écoute ta pièce…")
+        for attempt in range(2):
+            self._set_gain_and_wait(mtype, new_gain)
+            self._sample(0.7, 0.78, 0.8)
+            quiet = sorted(self._sample(silence_s, 0.8, 0.95)) or [-72.2]
+            noise, noise_peak = _pct(quiet, 0.5), _pct(quiet, 0.95)
+            if noise_peak - noise < 18 or noise_peak < -55 or attempt:
+                break
+            self._job_update(step="J’ai entendu un bruit : on recommence, silence total.")
+        # ta voix sans ses pauses : ce qui depasse nettement le bruit mesure (ramene au gain de l'ecoute de ta voix).
+        # Que tu parles d'un trait ou avec des pauses, les passages doux de ta voix restent comptes.
+        voiced = sorted(v for v in vals if v > max(noise_peak - shift + 6, -66)) or heard
+        low, med = _pct(voiced, 0.15), _pct(voiced, 0.5)
+        cal = normalize_cal({"type": mtype, "gain_db": new_gain, "t": time.time(), "noise_db": noise,
+                             "noise_peak_db": noise_peak, "voice_low_db": low + shift, "voice_db": med + shift,
+                             "voice_peak_db": peak + shift})
+        style = p.get("preset") if p.get("preset") in PRESET_FIT else MIC_TYPE_PRESET[mtype]
+        self._job_update(phase="apply", step="J’applique tes réglages…", progress=0.96)
+        with self.lock:
+            s["mic"] = {"type": mtype, "gain_db": new_gain}
+            s["mic_cal"] = cal
+            s["dsp"] = fit_dsp(style, cal, new_gain)
+            s["mic_preset"] = style
+            gen = self._mark("mic", "dsp")
+        self._wait_applied(gen)
+        dsp = s["dsp"]
+        log(f"Voix réglée : micro {mtype}, gain {new_gain} dB, bruit {cal['noise_peak_db']} dB, voix {cal['voice_db']} dB "
+            f"(crêtes {cal['voice_peak_db']}), noise gate {dsp['gate']['threshold']} dB, compresseur {dsp['comp']['threshold']} dB")
+        return {"type": mtype, "gain_db": new_gain, "preset": style, "cal": cal,
+                "snr_db": round(cal["voice_db"] - cal["noise_peak_db"], 1),
+                "gate": dict(dsp["gate"], attenuation_db=gate_attenuation(dsp["gate"]["attenuation"])),
+                "comp": dict(dsp["comp"], ratio_x=RATIOS[dsp["comp"]["ratio"]]), "deesser": dsp["deesser"],
+                "notes": self._voice_notes(mtype, new_gain, cal), "message": "Ta voix est réglée."}
+
+    def _voice_notes(self, mtype, gain, cal):
+        """Conseils apres le reglage : placement du micro, bruit, et sources d'echo."""
+        s, notes = self.state, []
+        snr = cal["voice_db"] - cal["noise_peak_db"]
+        if gain >= 72 and cal["voice_peak_db"] < VOICE_TARGET_DB - 3:
+            notes.append({"lvl": "warn", "t": "Ta voix arrive faiblement, même au gain maximum : rapproche-toi du micro (10 à 15 cm)."})
+        elif mtype == "condenser" and gain >= 42:
+            notes.append({"lvl": "tip", "t": "Tu sembles loin du micro : à 10–15 cm, ta voix sera plus présente et "
+                                             "l’écho de la pièce bien plus faible."})
+        elif gain <= 6:
+            notes.append({"lvl": "tip", "t": "Ta voix arrive très fort : tu peux reculer un peu du micro (10 à 15 cm)."})
+        if snr < 18:
+            notes.append({"lvl": "warn", "t": "Ta pièce est bruyante pour ce micro : rapproche-toi du micro, éloigne-le du PC "
+                                              "et du clavier, et tourne son dos vers le bruit."})
+        elif snr < 26:
+            notes.append({"lvl": "tip", "t": "Un peu de bruit de fond : le noise gate le coupe entre tes phrases."})
+        else:
+            notes.append({"lvl": "ok", "t": "Bruit de fond très faible : ta voix ressort nettement."})
+        if mtype == "condenser":
+            notes.append({"lvl": "tip", "t": "Micro statique : parle à 10–15 cm, face au micro, avec un filtre anti-pop."})
+        r = s["routing"]
+        if r["Chat"]["ChatMic"]:
+            notes.append({"lvl": "warn", "t": "Discord s’entend lui-même : tes amis ont de l’écho.",
+                          "fix": {"label": "Corriger", "action": "route",
+                                  "body": {"input": "Chat", "output": "ChatMic", "enabled": False}}})
+        if mtype == "condenser" and r["Chat"]["LineOut"]:
+            notes.append({"lvl": "tip", "t": "Si des enceintes sont branchées sur la GoXLR, ton micro y entend Discord "
+                                             "(écho chez tes amis) : garde le casque pendant les vocaux.",
+                          "fix": {"label": "Retirer Discord des enceintes", "action": "route",
+                                  "body": {"input": "Chat", "output": "LineOut", "enabled": False}}})
+        if r["Microphone"]["Headphones"] and s["volumes"]["MicMonitor"] > 64:
+            notes.append({"lvl": "tip", "t": f"Tu t’entends à {round(s['volumes']['MicMonitor'] * 100 / 255)} % dans le casque : "
+                                             "avec un casque ouvert, au-delà de 25 % ça peut siffler."})
+        return notes
 
     # -- scenes automatiques --
     def auto_scene_tick(self, running):
@@ -1663,7 +1981,9 @@ class Controller:
                     "job": dict(self.job) if self.job else None,
                     "mic": {"muted": s["mutes"]["Mic"], "partial": s["partial"]["Mic"]},
                     "health": self.health_status(), "sim": SIMULATE, "osd": s["prefs"]["osd"],
-                    "scene": s["scene"], "app_version": VERSION, "update": self.updater.brief()}
+                    "scene": s["scene"], "app_version": VERSION, "update": self.updater.brief(),
+                    "usb": self.usb, "listening": max(0.0, round(self._listen_until - time.monotonic(), 1))
+                    if self._listen_until else 0}
 
     def health(self):
         now = time.monotonic()
@@ -1678,6 +1998,7 @@ class Controller:
                 "device_uptime_s": round(time.time() - self.connected_since) if self.connected_since else None,
                 "loop_age_ms": round((now - self.heartbeat) * 1000),
                 "usb_call_ms": round((now - busy) * 1000) if busy else None,
+                "usb_stage": self.dev.stage, "usb": self.usb,
                 "reconnects": self.reconnects, "command_index": self.dev.count, "stats": dict(self.dev.stats),
                 "pending": len(self._dirty), "last_error": self.last_error, "errors": list(self.errors),
                 "auto_scene": self.auto_note, "log": list(RECENT_LOG)[-30:],
@@ -1689,7 +2010,7 @@ class Controller:
             return {
                 "version": VERSION, "v": self.version, "connected": self.connected,
                 "serial": self.dev.serial, "firmware": self.dev.firmware, "mix2": mix2,
-                "error": None if self.connected else self.last_error, "health": self.health_status(),
+                "error": None if self.connected else self.last_error, "health": self.health_status(), "usb": self.usb,
                 "sim": SIMULATE, "supervised": self.supervised,
                 "update": self.updater.snapshot(),
                 "state": json.loads(json.dumps(self.state)),
@@ -2464,8 +2785,8 @@ def run_apply_update(base_dir=None):
 
 # ---------------- serveur HTTP ----------------
 ACTIONS = {"volume", "mute", "fader", "route", "colour", "mic", "raw", "profile", "dsp", "mic-preset",
-           "scene", "scene-save", "scene-delete", "theme", "lighting", "detect-mic", "auto-gain", "job-cancel",
-           "settings", "auto-scenes", "reconnect", "restart-engine",
+           "scene", "scene-save", "scene-delete", "theme", "lighting", "detect-mic", "auto-gain", "voice-setup",
+           "mic-listen", "job-cancel", "settings", "auto-scenes", "reconnect", "restart-engine",
            "update-check", "update-install", "update-cancel", "update-ack", "update-remind"}
 ALIASES = {"mic-gain": "mic"}
 
@@ -2675,7 +2996,8 @@ def supervise():
                 h = http_call("GET", "/api/health", timeout=3)
                 last_ok = time.monotonic()
                 if h.get("loop_age_ms", 0) > WATCHDOG_S * 1000:
-                    reason = f"boucle USB figée depuis {h['loop_age_ms'] // 1000} s (pilote bloqué)"
+                    reason = (f"boucle USB figée depuis {h['loop_age_ms'] // 1000} s (pilote bloqué"
+                              + (f" pendant : {h['usb_stage']}" if h.get("usb_stage") else "") + ")")
             except Exception:
                 if time.monotonic() - last_ok > 25:
                     reason = "moteur muet depuis 25 s"

@@ -114,6 +114,18 @@ class Engine(unittest.TestCase):
         self.assertTrue(self.sim.dev.muted[g.CHANNELS.index("Chat")])
         self.assertEqual(self.sim.enumerate_violations, 0, "EnumerateDevices jamais appele handle ouvert")
 
+    def test_absente_dit_ce_que_voit_windows(self):
+        """Allumee sur un cable qui ne fait que charger : Windows ne la voit pas, l'appli le dit ; elle revient seule."""
+        self.ctl.ABSENT_RETRY_S = 0.1
+        self.sim.unplug()
+        self.assertTrue(wait_for(lambda: self.ctl.usb == "none" and self.ctl.health_status() == "absent", timeout=3))
+        self.assertEqual(self.ctl.live_snapshot()["usb"], "none")
+        self.sim.unplugged_usb = "failed"
+        self.assertTrue(wait_for(lambda: self.ctl.usb == "failed", timeout=3))
+        self.sim.plug()
+        self.assertTrue(wait_for(lambda: self.ctl.connected and self.ctl.usb == "mini", timeout=8))
+        self.assertTrue(any("ne fait peut-être que charger" in line for line in g.RECENT_LOG))
+
     def test_api_repond_pendant_un_blocage_usb(self):
         self.sim.hang(1.5)
         time.sleep(0.2)
@@ -239,6 +251,73 @@ class Engine(unittest.TestCase):
         self.settle()
         self.assertEqual(self.sim.dev.mic_type, self.ctl.state["mic"]["type"], "le type d'origine est remis apres l'analyse")
 
+    def _voice_setup(self, body, timeout=40):
+        """Lance « Régler ma voix » en parlant quand l'assistant le demande et en se taisant pendant le silence."""
+        done = threading.Event()
+
+        def speaker():
+            while not done.is_set():
+                job = self.ctl.job or {}
+                self.sim.dev.talking = job.get("phase") in ("detect", "voice")
+                time.sleep(0.01)
+        th = threading.Thread(target=speaker, daemon=True)
+        th.start()
+        try:
+            self.ctl.act("voice-setup", body)
+            self.assertTrue(wait_for(lambda: not self.ctl.job["running"], timeout=timeout))
+        finally:
+            done.set()
+            th.join(1)
+        self.assertIsNone(self.ctl.job["error"], self.ctl.job)
+        return self.ctl.job["result"]
+
+    def test_regler_ma_voix_micro_statique(self):
+        """Un micro statique branche alors que l'etat dit « dynamique » (donc sans 48 V) : l'assistant le trouve,
+        allume le 48 V, cale les cretes de la voix vers -12 dB et place le noise gate entre bruit et voix."""
+        self.sim.dev.mic_input = "condenser"
+        self.ctl.state["mic"] = {"type": "dynamic", "gain_db": 30}
+        self.ctl._mark("mic")
+        self.settle()
+        res = self._voice_setup({"voice_seconds": 2.5, "silence_seconds": 1.2})
+        self.settle()
+        s, cal = self.ctl.state, res["cal"]
+        self.assertEqual((res["type"], s["mic"]["type"], s["mic_preset"]), ("condenser", "condenser", "studio"))
+        self.assertTrue(self.sim.dev.phantom, "48 V allume pour le micro statique")
+        self.assertEqual(self.sim.dev.gains["condenser"], s["mic"]["gain_db"])
+        self.assertTrue(-14.5 <= cal["voice_peak_db"] <= -9.5, cal)
+        gate = s["dsp"]["gate"]["threshold"]
+        self.assertTrue(cal["noise_peak_db"] + 3 <= gate <= cal["voice_low_db"], (gate, cal))
+        self.assertLess(s["dsp"]["comp"]["threshold"], cal["voice_peak_db"])
+        self.assertEqual(s["mic_cal"], cal)
+        self.assertTrue(any(n["lvl"] == "ok" for n in res["notes"]), res["notes"])
+        # les seuils suivent le gain : 6 dB de plus, gate et compresseur 6 dB plus haut
+        self.ctl.act("mic", {"gain_db": s["mic"]["gain_db"] + 6})
+        self.assertEqual(s["dsp"]["gate"]["threshold"], min(-10, gate + 6))
+        self.ctl.act("mic-preset", {"name": "radio"})
+        self.assertNotEqual(s["dsp"]["gate"]["threshold"], g.MIC_PRESETS["radio"]["dsp"]["gate"]["threshold"])
+
+    def test_regler_ma_voix_qui_sature(self):
+        self.sim.dev.mic_input = "dynamic"
+        self.sim.dev.voice_db = -2.0         # voix tres forte a 40 dB : l'entree sature
+        self.ctl.state["mic"] = {"type": "dynamic", "gain_db": 45}
+        self.ctl._mark("mic")
+        self.settle()
+        res = self._voice_setup({"detect": False, "voice_seconds": 2.0, "silence_seconds": 1.0})
+        self.assertTrue(-14.5 <= res["cal"]["voice_peak_db"] <= -9.5, res)
+        self.assertLess(res["gain_db"], 35)
+
+    def test_m_ecouter_puis_retour(self):
+        d, mon = self.sim.dev, g.CHANNELS.index("MicMonitor")
+        self.ctl.act("route", {"input": "Microphone", "output": "Headphones", "enabled": False})
+        self.ctl.act("volume", {"channel": "MicMonitor", "value": 0})
+        self.settle()
+        self.ctl.act("mic-listen", {"seconds": 0.4, "level": 120})
+        self.assertTrue(wait_for(lambda: d.volumes[mon] == 120 and d.route_on("Microphone", "Headphones"), timeout=2))
+        self.assertGreater(self.ctl.live_snapshot()["listening"], 0)
+        self.assertTrue(wait_for(lambda: d.volumes[mon] == 0 and not d.route_on("Microphone", "Headphones"), timeout=3))
+        self.assertEqual(self.ctl.live_snapshot()["listening"], 0)
+        self.assertEqual(self.ctl.state["volumes"]["MicMonitor"], 0, "l'etat enregistre n'a pas bouge")
+
     # ---------- scenes automatiques ----------
     def test_scenes_automatiques(self):
         c = self.ctl
@@ -268,6 +347,42 @@ class Engine(unittest.TestCase):
         self.assertTrue(st["mutes"]["Mic"])
         self.assertEqual(st["mute_modes"]["A"], "all")
         self.assertIn("Soir", st["user_scenes"])
+
+
+class VoiceFit(unittest.TestCase):
+    """Placement des reglages par rapport a une voix mesuree (sans appareil)."""
+    CAL = {"type": "condenser", "gain_db": 30, "t": 1.0, "noise_db": -63.0, "noise_peak_db": -60.0,
+           "voice_low_db": -36.0, "voice_db": -24.0, "voice_peak_db": -12.0}
+
+    def test_gate_entre_bruit_et_voix(self):
+        d = g.fit_dsp("studio", self.CAL, 30)
+        self.assertTrue(-54 <= d["gate"]["threshold"] <= -40, d["gate"])
+        self.assertEqual(d["comp"]["threshold"], -28)
+        self.assertTrue(4 <= d["comp"]["makeup"] <= 10, d["comp"])
+        # le gate ferme pousse le bruit (plus la compensation) sous -75 dB, sans aller plus loin que necessaire
+        att = -g.gate_attenuation(d["gate"]["attenuation"])
+        self.assertGreaterEqual(-60 + d["comp"]["makeup"] - att, -75 - 1)
+        self.assertLessEqual(-60 + d["comp"]["makeup"] - att, g.RESIDUAL_NOISE_DB)
+
+    def test_piece_bruyante_coupe_plus(self):
+        loud = dict(self.CAL, noise_db=-48.0, noise_peak_db=-44.0)
+        self.assertGreater(g.fit_dsp("studio", loud, 30)["gate"]["attenuation"],
+                           g.fit_dsp("studio", self.CAL, 30)["gate"]["attenuation"])
+
+    def test_sans_mesure_valeurs_d_usine(self):
+        self.assertEqual(g.fit_dsp("studio"), g.MIC_PRESETS["studio"]["dsp"])
+        self.assertEqual(g.fit_dsp("brut", self.CAL, 30), g.MIC_PRESETS["brut"]["dsp"])
+
+    def test_mesure_relue_ou_rejetee(self):
+        self.assertEqual(g.normalize_cal(self.CAL), self.CAL)
+        self.assertIsNone(g.normalize_cal({"type": "condenser"}))
+        self.assertIsNone(g.normalize_cal({**self.CAL, "type": "ruban"}))
+        self.assertEqual(g.normalize_state({"mic_cal": self.CAL})["mic_cal"], self.CAL)
+
+    def test_usb_sans_windows(self):
+        g.configure(simulate=True, data_dir=tempfile.gettempdir())
+        g._lib = None
+        self.assertIsNone(g.usb_scan(), "rien a dire quand l'information manque")
 
 
 class Http(unittest.TestCase):
@@ -313,6 +428,7 @@ class Http(unittest.TestCase):
         self.assertEqual((code, r["ok"]), (200, True))
         self.assertEqual(self.req("POST", "/api/nimporte", {}, {"X-GoXLR": "1"})[0], 404)
         self.assertEqual(self.req("POST", "/api/volume", {"channel": "Zzz", "value": 1}, {"X-GoXLR": "1"})[0], 400)
+        self.assertNotEqual(self.req("POST", "/api/mic-listen", {"seconds": 0}, {"X-GoXLR": "1"})[0], 404)
         self.assertEqual(self.req("GET", "/api/processes")[0], 200)
 
 

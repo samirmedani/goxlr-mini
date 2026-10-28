@@ -38,7 +38,7 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 <td width="50%"><img src="docs/captures/routing.jpg" alt="Page Routage"></td>
 </tr>
 <tr>
-<td><b>Micro</b> : détection du micro, gain automatique, six préréglages de voix, égaliseur, noise gate, compresseur, de-esser. Bouton micro en bascule, <i>maintenir pour couper</i> ou <i>appuyer pour parler</i>.</td>
+<td><b>Micro</b> : <b>« Régler ma voix »</b> trouve ton micro (48 V compris) et cale gain, noise gate et compresseur sur ta voix et ta pièce en 20 secondes ; « M'écouter » ; sept préréglages dont Studio, égaliseur, de-esser. Bouton micro en bascule, <i>maintenir pour couper</i> ou <i>appuyer pour parler</i>.</td>
 <td><b>Routage</b> : qui entend quoi (toi, ton stream, Discord, la VOD, les enceintes). <b>VOD sans musique</b> : la VOD reçoit le stream sans la musique, anti-DMCA.</td>
 </tr>
 <tr>
@@ -63,6 +63,22 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 <p align="center">
   <img src="docs/captures/overlay.jpg" width="380" alt="Incrustation OBS : micro coupé">
 </p>
+
+## Une voix propre, sans écho
+
+<p align="center">
+  <img src="docs/captures/voice.jpg" width="720" alt="Régler ma voix : micro statique trouvé, gain, noise gate et compresseur calés sur la voix et la pièce">
+</p>
+
+1. Page **Micro › Régler ma voix** : parle une dizaine de secondes, puis tais-toi quelques secondes. Écoute le
+   résultat avec **M'écouter**.
+2. **Discord** : micro « Chat Mic », sortie « Chat ». Coupe la suppression de bruit, l'annulation d'écho et le
+   réglage automatique du gain de Discord : la GoXLR s'en charge déjà.
+3. **OBS** : une seule source audio, « Broadcast Stream Mix » ; « Audio du bureau » désactivé. Ce qui part en
+   live se choisit dans la page Routage.
+4. Branche la GoXLR **toujours sur le même port USB** : sur un autre port, Windows crée de nouveaux périphériques
+   audio, et Discord ou OBS ne retrouvent plus les leurs.
+5. Casque ouvert et micro statique : garde le retour micro bas, et pas d'enceintes pendant les vocaux.
 
 ## Installer
 
