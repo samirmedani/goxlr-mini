@@ -376,6 +376,96 @@ class Engine(unittest.TestCase):
         self.assertIn("Soir", st["user_scenes"])
 
 
+class HeadphoneEq(unittest.TestCase):
+    """Egaliseur du casque (Equalizer APO), sans appareil : calculs, fichier, installation simulee, live."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="goxlr-hp-")
+        g.configure(simulate=True, data_dir=self.tmp)
+        self.sim = simulator.FakeTusb.reset_shared()
+        g._lib = self.sim
+        self.ctl = g.Controller(persist=False)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def cfg(self, name=g.EQAPO_FILE):
+        with open(os.path.join(self.tmp, "eqapo-sim", "config", name), encoding="ascii") as f:
+            return f.read()
+
+    def test_preampli_comme_autoeq(self):
+        """Correction seule : le preampli calcule rejoint celui d'AutoEq (HD 560S : -6,6 dB), avec 0,3 dB de marge."""
+        flt, pre = g.hp_filters(g.normalize_hp_eq({"headphone": "Sennheiser HD 560S"}))
+        self.assertEqual(len(flt), 10)
+        self.assertTrue(-7.2 <= pre <= -6.6, pre)
+        self.assertEqual(g.hp_filters(g.normalize_hp_eq({}))[1], 0.0)
+
+    def test_fichier_equalizer_apo(self):
+        eq = g.normalize_hp_eq({"headphone": "Sennheiser HD 560S", "bands": [4, 5, 3, 1, 0, 0, 0, 0, 0, 0],
+                                "channels": ["Game", "Chat"]})
+        t = g.hp_config_text(eq, True)
+        t.encode("ascii")
+        self.assertIn("Device: GoXLR Game; GoXLR Chat", t)
+        self.assertIn("Filter 1: ON LSC Fc 105 Hz Gain 9.0 dB Q 0.70", t)
+        self.assertIn("Filter 11: ON PK Fc 31 Hz Gain 4.0 dB Q 1.41", t)
+        self.assertTrue(t.rstrip().endswith("Device: all"))
+        self.assertNotIn("Filter", g.hp_config_text(eq, False, "live"))
+
+    def test_installation_simulee_puis_live(self):
+        c = self.ctl
+        st = c.snapshot()["hp_eq"]
+        self.assertFalse(st["apo"])
+        c.act("hp-eq", {"headphone": "Sennheiser HD 560S", "style": "basses"})
+        self.assertEqual(c.state["hp_eq"]["bands"], g.HP_STYLES["basses"]["bands"])
+        c.act("hp-eq-setup", {})
+        self.assertTrue(wait_for(lambda: not c.eqapo.setup["running"], timeout=5))
+        self.assertIsNone(c.eqapo.setup["error"], c.eqapo.setup)
+        st = c.snapshot()["hp_eq"]
+        self.assertTrue(st["apo"] and st["endpoints"]["Game"] and st["active"], st)
+        self.assertTrue(c.state["hp_eq"]["enabled"])
+        self.assertIn("Include: goxlr-mini.txt", self.cfg("config.txt"))
+        self.assertIn("Preamp: -", self.cfg())
+        # OBS ouvert : coupe ; ferme : revient
+        c.hp_tick(["obs64.exe", "discord.exe"])
+        self.assertNotIn("Filter", self.cfg())
+        self.assertTrue(c.snapshot()["hp_eq"]["live"])
+        c.hp_tick(["discord.exe"])
+        self.assertIn("Filter", self.cfg())
+        # retrait : effets d'origine, egaliseur coupe
+        c.act("hp-eq-remove", {})
+        self.assertTrue(wait_for(lambda: not c.eqapo.setup["running"], timeout=5))
+        self.assertFalse(c.snapshot()["hp_eq"]["endpoints"]["Game"])
+        self.assertNotIn("Filter", self.cfg())
+
+    def test_profils(self):
+        c = self.ctl
+        c.act("hp-eq", {"bands": [1, 2, 3, 0, 0, 0, 0, 0, 0, 9]})
+        self.assertIsNone(c.state["hp_eq"]["style"], "bande touchee a la main : reglage perso")
+        c.act("hp-eq-save", {"name": "FPS"})
+        self.assertEqual(c.state["hp_eq"]["style"], "custom:FPS")
+        c.act("hp-eq", {"style": "neutre"})
+        c.act("hp-eq", {"style": "custom:FPS"})
+        self.assertEqual(c.state["hp_eq"]["bands"][9], 9)
+        st = g.normalize_state(json.loads(json.dumps(c.state)))
+        self.assertEqual(st["hp_eq"]["custom"]["FPS"][0], 1)
+        c.act("hp-eq-delete", {"name": "FPS"})
+        self.assertNotIn("FPS", c.state["hp_eq"]["custom"])
+        self.assertIsNone(c.state["hp_eq"]["style"])
+
+    def test_ancienne_config_gardee(self):
+        d = os.path.join(self.tmp, "eqapo-sim", "config")
+        os.makedirs(d)
+        with open(os.path.join(d, "config.txt"), "w") as f:
+            f.write("Include: autre-outil.txt\n")
+        self.ctl.eqapo.sim_apo = True
+        self.ctl.act("hp-eq", {"enabled": True})
+        cfg = self.cfg("config.txt")
+        self.assertIn("Include: goxlr-mini.txt", cfg)
+        self.assertNotIn("autre-outil", cfg)
+        backups = [n for n in os.listdir(d) if n.startswith("config.goxlr-mini-backup-")]
+        self.assertEqual(len(backups), 1)
+
+
 class VoiceFit(unittest.TestCase):
     """Placement des reglages par rapport a une voix mesuree (sans appareil)."""
     CAL = {"type": "condenser", "gain_db": 30, "t": 1.0, "noise_db": -63.0, "noise_peak_db": -60.0,

@@ -53,6 +53,8 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 
 - **Couper d'une seule sortie** : chaque bouton mute a son mode (partout, stream, Discord, casque, enceintes).
   Appui long = coupé partout, le bouton clignote. Orange dans l'appli = coupé d'une sortie, rouge = partout.
+- **Égaliseur du casque** : correction de ton casque (AutoEq, cible Harman), styles et profils sur 10 bandes, appliqués
+  par Equalizer APO aux voies GoXLR choisies ; coupé tout seul pendant le live.
 - **Faders physiques** suivis en direct ; un trait pointillé montre l'écart avec le volume réglé dans l'appli.
 - **Appli Windows** : interface claire qui suit la taille de la fenêtre, icône d'état (rouge = micro coupé), bulle
   à l'écran quand le micro change (jamais de focus, même en jeu), menu rapide dans la zone de notification.

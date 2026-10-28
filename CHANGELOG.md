@@ -1,5 +1,16 @@
 # Nouveautés
 
+## 4.6.0
+
+**Nouveau**
+- Page **Casque** : un égaliseur pour tout le son du PC qui passe par la GoXLR. Choisis ton casque pour le
+  ramener à la courbe de référence Harman (corrections AutoEq de 21 casques courants), ajoute un style (Basses +,
+  Jeu, Voix claire, Film, Musique, Doux), règle finement sur 10 bandes et enregistre tes profils.
+- Un clic installe Equalizer APO (logiciel libre, téléchargé depuis sa page officielle, empreinte vérifiée) et le
+  branche sur les voies GoXLR choisies ; GoXLR Mini le rebranche tout seul si la GoXLR change de port USB.
+- Filtres sans latence, volume baissé juste ce qu'il faut pour ne jamais saturer. Le stream recevant aussi ce son,
+  l'égaliseur se coupe tout seul quand OBS est ouvert (réglable).
+
 ## 4.5.0
 
 **Nouveau**

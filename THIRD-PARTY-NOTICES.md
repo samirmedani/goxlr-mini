@@ -11,6 +11,8 @@ GoXLR Mini est distribué sous licence MIT (voir [LICENSE](LICENSE)). Il s'appui
 | [NAudio](https://github.com/naudio/NAudio) | Outil de test audio du dépôt (`tools/audiotest`), absent de la release | MIT |
 | [Lucide](https://lucide.dev) | Icônes de l'interface | ISC |
 | [Inter](https://rsms.me/inter) | Police de l'interface, intégrée à `ui.html` | SIL Open Font License 1.1 |
+| [AutoEq](https://github.com/jaakkopasanen/AutoEq) | Corrections de casques (cible Harman, mesures d'oratory1990) reprises dans le moteur | MIT |
+| [Equalizer APO](https://sourceforge.net/projects/equalizerapo/) | Égaliseur du casque sous Windows : téléchargé depuis sa page officielle à la demande, empreinte vérifiée, jamais livré avec GoXLR Mini | GPL-2.0 |
 
 Le **pilote officiel GoXLR** (TC-Helicon / Music Tribe) n'est pas distribué avec GoXLR Mini : il s'installe à part.
 GoXLR est une marque de Music Tribe. Ce projet indépendant n'est ni affilié, ni soutenu par TC-Helicon ou Music Tribe.

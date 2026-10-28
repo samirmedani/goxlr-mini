@@ -50,6 +50,7 @@ Si le moteur tourne, les commandes passent par lui (HTTP local).
 """
 import copy
 import ctypes
+import cmath
 import hashlib
 import json
 import math
@@ -59,6 +60,7 @@ import socket
 import struct
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -69,7 +71,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.5.0"
+VERSION = "4.6.0"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -728,6 +730,7 @@ def default_state():
         "prefs": {"hold_ms": 500, "osd": True, "update_reminded": None},
         "scene": None,
         "user_scenes": {},
+        "hp_eq": normalize_hp_eq(None),             # egaliseur du casque (Equalizer APO)
     }
 
 def normalize_dsp(src, base=None):
@@ -845,6 +848,7 @@ def normalize_state(src):
     if src.get("mic_preset") in MIC_PRESETS or src.get("mic_preset") == "custom":
         st["mic_preset"] = src["mic_preset"]
     st["mic_cal"] = normalize_cal(src.get("mic_cal"))
+    st["hp_eq"] = normalize_hp_eq(src.get("hp_eq"))
     if "bleep_db" in src:
         st["bleep_db"] = _clamp(src["bleep_db"], -36, 0)
     li = src.get("lighting") or {}
@@ -939,6 +943,8 @@ class Controller:
         self._listen_level = 0
         self._force_reconnect = False
         self.usb = None                     # ce que Windows voit sur l'USB (usb_scan), pour expliquer une absence
+        self.eqapo = EqApo()                # egaliseur du casque
+        self.hp_live = False                # un logiciel de live tourne (OBS...) : egaliseur coupe si demande
         self.errors = deque(maxlen=15)
         self.connects = 0
         self.reconnects = 0
@@ -1476,6 +1482,8 @@ class Controller:
             cid, body = int(str(p["command_id"]), 16), bytes.fromhex(p.get("body_hex") or "")
             resp = self.call(lambda: self.dev.command(cid, body))
             return {"ok": True, "response_hex": resp.hex()}
+        if action in ("hp-eq-setup", "hp-eq-remove"):
+            return self._hp_start(action == "hp-eq-setup")
         if action == "reconnect":
             self._force_reconnect = True
             self.wake.set()
@@ -1625,6 +1633,30 @@ class Controller:
             self._listen_until = time.monotonic() + secs if secs else 0.0
             self._mark(("volume", "MicMonitor"), ("route", "Microphone"), bump=False)
             return {"ok": True, "seconds": secs}
+        elif action == "hp-eq":
+            eq = s["hp_eq"]
+            upd = dict(p)
+            if p.get("style") in HP_STYLES:
+                upd["bands"] = list(HP_STYLES[p["style"]]["bands"])
+            elif isinstance(p.get("style"), str) and p["style"].startswith("custom:") and p["style"][7:] in eq["custom"]:
+                upd["bands"] = list(eq["custom"][p["style"][7:]])
+            elif "bands" in p and "style" not in p:
+                upd["style"] = None                  # bande touchee a la main : reglage perso
+            s["hp_eq"] = normalize_hp_eq(upd, eq)
+            self.hp_apply()
+        elif action == "hp-eq-save":
+            name = str(p.get("name") or "").strip()[:40]
+            if not name:
+                raise ValueError("nom de profil vide")
+            eq = s["hp_eq"]
+            eq["custom"][name] = list(eq["bands"])
+            eq["style"] = "custom:" + name
+            self.hp_apply()
+        elif action == "hp-eq-delete":
+            eq = s["hp_eq"]
+            eq["custom"].pop(str(p.get("name")), None)
+            if eq["style"] == "custom:" + str(p.get("name")):
+                eq["style"] = None
         elif action == "job-cancel":
             if self.job:
                 self.job["cancel"] = True
@@ -1990,13 +2022,119 @@ class Controller:
         return target
 
     def app_watch_loop(self, interval=3.0):
+        try:
+            self.hp_apply()
+        except Exception as e:
+            log(f"Égaliseur du casque : {describe(e)}")
         while True:
             time.sleep(interval)
+            running = None
             try:
+                if self.state["auto_scenes"]["enabled"] or self.state["hp_eq"]["enabled"]:
+                    running = list_processes()
                 if self.state["auto_scenes"]["enabled"]:
-                    self.auto_scene_tick(list_processes())
+                    self.auto_scene_tick(running)
             except Exception as e:
                 log(f"Scènes automatiques : {describe(e)}")
+            try:
+                self.hp_tick(running)
+            except Exception as e:
+                log(f"Égaliseur du casque : {describe(e)}")
+
+    # -- egaliseur du casque --
+    def hp_apply(self):
+        """Ecrit la config d'Equalizer APO d'apres l'etat (coupee si desactive ou pendant le live)."""
+        eq = self.state["hp_eq"]
+        if not eq["enabled"]:
+            text = hp_config_text(eq, False, "desactive dans l'appli")
+        elif eq["pause_live"] and self.hp_live:
+            text = hp_config_text(eq, False, "live en cours : le stream recoit le son sans egaliseur")
+        elif not eq["channels"]:
+            text = hp_config_text(eq, False, "aucune voie choisie")
+        else:
+            text = hp_config_text(eq, True)
+        if eq["enabled"] and self.eqapo.installed():
+            self.eqapo.take_config()
+        if self.eqapo.write(text):
+            with self.lock:
+                self.version += 1
+
+    def hp_tick(self, running):
+        eq = self.state["hp_eq"]
+        live = bool(running) and any(_norm_app(a) in LIVE_APPS for a in running)
+        if live != self.hp_live:
+            self.hp_live = live
+            if eq["enabled"] and eq["pause_live"]:
+                log("Égaliseur du casque " + ("coupé : live en cours" if live else "réactivé : fin du live"))
+            self.hp_apply()
+        # GoXLR sur un autre port USB : nouvelles voies Windows, on y rebranche l'egaliseur (une fois par 10 min)
+        if eq["enabled"] and self.eqapo.installed() and not (self.eqapo.setup or {}).get("running") \
+                and time.monotonic() - self.eqapo.last_auto > 600:
+            eps = self.eqapo.endpoints()
+            todo = [eps[c]["guid"] for c in eq["channels"] if c in eps and not eps[c]["installed"]]
+            if todo:
+                self.eqapo.last_auto = time.monotonic()
+                for g in todo:
+                    self.eqapo.install_endpoint(g)
+                self.eqapo.restart_audio()
+                log(f"Égaliseur du casque branché sur {len(todo)} voie(s) GoXLR")
+                with self.lock:
+                    self.version += 1
+
+    def _hp_start(self, install):
+        if (self.eqapo.setup or {}).get("running"):
+            raise ValueError("Installation déjà en cours.")
+        self.eqapo.setup = {"running": True, "step": "Préparation…", "error": None, "done": False, "install": install}
+        threading.Thread(target=self._hp_setup_run, args=(install,), daemon=True).start()
+        with self.lock:
+            self.version += 1
+        return {"ok": True}
+
+    def _hp_setup_run(self, install):
+        st = self.eqapo.setup
+
+        def step(t):
+            st["step"] = t
+            with self.lock:
+                self.version += 1
+        try:
+            eq = self.state["hp_eq"]
+            if install:
+                if not self.eqapo.installed():
+                    self.eqapo.download_and_install(step)
+                step("Branchement sur les voies GoXLR…")
+                eps = self.eqapo.endpoints()
+                if not any(c in eps for c in eq["channels"]):
+                    raise ValueError("Aucune voie GoXLR trouvée dans Windows : branche la GoXLR puis recommence.")
+                for c in eq["channels"]:
+                    if c in eps and not eps[c]["installed"]:
+                        self.eqapo.install_endpoint(eps[c]["guid"])
+                with self.lock:
+                    self.state["hp_eq"]["enabled"] = True
+                    self._save_dirty = True
+                self.eqapo.written = None
+                self.hp_apply()
+                step("Redémarrage du son de Windows (2 secondes)…")
+                self.eqapo.restart_audio()
+                log("Égaliseur du casque installé sur les voies " + ", ".join(c for c in eq["channels"] if c in eps))
+            else:
+                step("Retrait de l'égaliseur des voies GoXLR…")
+                for c, v in self.eqapo.endpoints().items():
+                    if v["installed"]:
+                        self.eqapo.uninstall_endpoint(v["guid"])
+                with self.lock:
+                    self.state["hp_eq"]["enabled"] = False
+                    self._save_dirty = True
+                self.hp_apply()
+                step("Redémarrage du son de Windows (2 secondes)…")
+                self.eqapo.restart_audio()
+                log("Égaliseur du casque retiré des voies GoXLR")
+            st.update(running=False, done=True, step="Terminé")
+        except Exception as e:
+            log(f"Égaliseur du casque : {describe(e)}")
+            st.update(running=False, error=str(e))
+        with self.lock:
+            self.version += 1
 
     # -- vues --
     def health_status(self):
@@ -2049,6 +2187,7 @@ class Controller:
                 "error": None if self.connected else self.last_error, "health": self.health_status(), "usb": self.usb,
                 "sim": SIMULATE, "supervised": self.supervised,
                 "update": self.updater.snapshot(),
+                "hp_eq": self.eqapo.status(self.state["hp_eq"], self.hp_live),
                 "state": json.loads(json.dumps(self.state)),
                 "live": json.loads(json.dumps(self.live)),
                 "job": json.loads(json.dumps(self.job)) if self.job else None,
@@ -2067,7 +2206,9 @@ class Controller:
                                         "mic_preset": v["mic_preset"]} for k, v in SCENES.items()},
                          "themes": {k: {"label": v["label"], "preview": self._theme_preview(k)} for k, v in THEMES.items()},
                          "animations": list(ANIMATIONS), "fader_styles": list(FADER_STYLES),
-                         "eq_bands": list(EQ_BANDS), "ratios": RATIOS, "known_apps": KNOWN_APPS},
+                         "eq_bands": list(EQ_BANDS), "ratios": RATIOS, "known_apps": KNOWN_APPS,
+                         "hp_bands": HP_BANDS, "hp_q": HP_Q, "hp_channels": HP_CHANNELS,
+                         "hp_styles": HP_STYLES, "headphones": HEADPHONES},
             }
 
     def _theme_preview(self, name):
@@ -2150,6 +2291,398 @@ def user_apps():
     names = sorted(n for n in list_processes() if n not in SYSTEM_PROCESSES)
     known = [{"app": n, "label": KNOWN_APPS[n]} for n in names if n in KNOWN_APPS]
     return {"known": known, "others": [n for n in names if n not in KNOWN_APPS][:300]}
+
+# ---------------- egaliseur du casque (Equalizer APO) ----------------
+# La Mini n'a pas d'egaliseur de sortie : on egalise le son du PC dans Windows, sur les voies GoXLR choisies, avec
+# Equalizer APO (logiciel libre de reference). Filtres IIR (biquads) : aucune latence ajoutee, rien de perceptible en jeu.
+# Le moteur ecrit sa config et le branche sur les voies GoXLR comme le fait son Device Selector (memes cles de registre,
+# valeurs d'origine gardees pour pouvoir revenir en arriere). Le stream recoit aussi ce son : coupure pendant le live.
+EQAPO_DIR = os.environ.get("GOXLR_EQAPO_DIR") or os.path.join(
+    os.environ.get("ProgramW6432") or os.environ.get("ProgramFiles") or r"C:\Program Files", "EqualizerAPO")
+EQAPO_FILE = "goxlr-mini.txt"
+EQAPO_URL = "https://sourceforge.net/projects/equalizerapo/files/1.4.2/EqualizerAPO-x64-1.4.2.exe/download"
+EQAPO_SHA256 = "7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa"     # 1.4.2, 11 980 366 octets
+EQAPO_PRE = "{EACD2258-FCAC-4FF4-B36D-419E924A6D79}"
+EQAPO_POST = "{EC1CC9CE-FAED-4822-828A-82A81A6F018F}"
+HP_BANDS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+HP_Q = 1.41                                   # une octave par bande
+HP_CHANNELS = ["Game", "Music", "System", "Chat", "Sample"]       # noms des voies GoXLR dans Windows
+LIVE_APPS = {"obs64", "obs32", "obs", "streamlabs obs", "streamlabs desktop", "xsplit.core", "twitchstudio", "meld studio"}
+HP_STYLES = {
+    "neutre": {"label": "Neutre", "desc": "Le son tel quel, ou juste corrigé pour ton casque.", "bands": [0] * 10},
+    "basses": {"label": "Basses +", "desc": "Des graves pleins et profonds, sans couvrir les voix.",
+               "bands": [4, 5, 3, 1, 0, 0, 0, 0, 0, 0]},
+    "jeu": {"label": "Jeu", "desc": "Pas, rechargements et directions plus nets.",
+            "bands": [-2, -1, -1, -1, 0, 1, 3, 3, 2, 0]},
+    "voix": {"label": "Voix claire", "desc": "Discord, podcasts et vidéos : les voix devant.",
+             "bands": [-4, -3, -1, 0, 1, 2, 3, 2, 0, -1]},
+    "film": {"label": "Film", "desc": "Grand et immersif : impacts et ambiance.",
+             "bands": [4, 4, 2, 0, -1, -1, 0, 2, 3, 3]},
+    "musique": {"label": "Musique", "desc": "Chaleureux et détaillé, pour l'écoute.",
+                "bands": [2, 3, 1, 0, -1, 0, 1, 1, 2, 2]},
+    "doux": {"label": "Doux", "desc": "Longues sessions : graves et aigus calmés.",
+             "bands": [-3, -2, -1, 0, 0, 1, 1, 0, -2, -3]},
+}
+# Corrections AutoEq (cible Harman, mesures oratory1990, licence MIT) : (type, frequence, gain dB, Q)
+HEADPHONES = {
+    "Sennheiser HD 560S": [("LSC", 105, 9.0, 0.7), ("PK", 8983, 4.4, 2.63), ("PK", 54, -5.4, 0.48), ("PK", 1148, -1.5, 2.38), ("PK", 491, 0.6, 1.23), ("HSC", 10000, -3.9, 0.7), ("PK", 7451, 2.0, 3.91), ("PK", 4502, -1.7, 6.0), ("PK", 1937, 0.9, 3.93), ("PK", 5639, -0.9, 6.0)],
+    "Sennheiser HD 599": [("LSC", 105, 6.1, 0.7), ("PK", 152, -4.3, 0.59), ("PK", 1751, 4.4, 1.45), ("PK", 4485, -1.9, 2.72), ("PK", 40, 1.0, 3.06), ("HSC", 10000, -0.7, 0.7), ("PK", 9629, 6.0, 1.71), ("PK", 5771, -2.8, 5.56), ("PK", 3175, -2.0, 4.7), ("PK", 3690, 0.7, 4.38)],
+    "Sennheiser HD 600": [("LSC", 105, 6.5, 0.7), ("PK", 125, -2.7, 0.55), ("PK", 8445, 3.3, 1.61), ("PK", 522, 0.7, 1.02), ("PK", 1298, -1.2, 2.14), ("HSC", 10000, -3.1, 0.7), ("PK", 3158, -1.8, 3.67), ("PK", 2166, 0.9, 3.32), ("PK", 6639, 2.2, 5.82), ("PK", 5433, -1.2, 5.7)],
+    "Sennheiser HD 650": [("LSC", 105, 6.4, 0.7), ("PK", 8800, 5.1, 1.42), ("PK", 118, -3.1, 0.5), ("PK", 37, 0.7, 3.96), ("PK", 3169, -1.7, 3.89), ("HSC", 10000, -2.1, 0.7), ("PK", 1227, -1.2, 2.53), ("PK", 2055, 1.2, 3.23), ("PK", 587, 0.4, 1.19), ("PK", 5332, -1.1, 5.75)],
+    "Sennheiser HD 6XX": [("LSC", 105, 6.4, 0.7), ("PK", 8800, 5.1, 1.42), ("PK", 118, -3.1, 0.5), ("PK", 37, 0.7, 3.96), ("PK", 3169, -1.7, 3.89), ("HSC", 10000, -2.1, 0.7), ("PK", 1227, -1.2, 2.53), ("PK", 2055, 1.2, 3.23), ("PK", 587, 0.4, 1.19), ("PK", 5332, -1.1, 5.75)],
+    "Sennheiser HD 660S2": [("LSC", 105, 7.6, 0.7), ("PK", 98, -3.5, 0.31), ("PK", 8089, 4.7, 0.53), ("PK", 5567, -6.6, 3.92), ("PK", 1206, -2.0, 2.46), ("HSC", 10000, -3.8, 0.7), ("PK", 2218, 1.1, 3.75), ("PK", 3206, -1.2, 3.51), ("PK", 4367, 1.3, 6.0), ("PK", 115, 0.1, 1.26)],
+    "Sennheiser HD 800 S": [("LSC", 105, 6.6, 0.7), ("PK", 142, -2.3, 0.3), ("PK", 1959, 2.5, 0.88), ("PK", 5679, -4.4, 4.36), ("PK", 212, -0.5, 2.36), ("HSC", 10000, -4.3, 0.7), ("PK", 1043, -1.0, 2.89), ("PK", 1445, 1.0, 3.43), ("PK", 2640, -0.9, 4.01), ("PK", 3421, 1.3, 5.47)],
+    "Beyerdynamic DT 770 Pro": [("LSC", 105, -3.0, 0.7), ("PK", 6430, -4.2, 0.97), ("PK", 3684, 6.8, 2.88), ("PK", 213, 3.5, 2.46), ("PK", 139, -3.9, 4.92), ("HSC", 10000, -5.4, 0.7), ("PK", 93, 3.5, 3.0), ("PK", 9561, 2.3, 1.86), ("PK", 45, -1.3, 1.74), ("PK", 119, -2.1, 5.83)],
+    "Beyerdynamic DT 990 Pro": [("LSC", 105, 10.1, 0.7), ("PK", 541, 3.1, 0.52), ("PK", 64, -7.4, 0.38), ("PK", 7731, -4.6, 1.06), ("PK", 640, 0.6, 2.47), ("HSC", 10000, -9.8, 0.7), ("PK", 7136, 3.1, 2.08), ("PK", 5897, -4.8, 5.3), ("PK", 4193, 1.1, 1.51), ("PK", 9436, 2.7, 3.53)],
+    "Beyerdynamic DT 700 Pro X": [("LSC", 105, 1.0, 0.7), ("PK", 131, -4.1, 1.24), ("PK", 2692, -2.6, 0.37), ("PK", 265, 4.2, 1.71), ("PK", 3557, 6.8, 2.7), ("HSC", 10000, -0.2, 0.7), ("PK", 5709, -2.0, 3.38), ("PK", 62, 1.5, 3.47), ("PK", 88, -0.8, 3.25), ("PK", 4028, 1.4, 5.91)],
+    "Beyerdynamic DT 900 Pro X": [("LSC", 105, 5.7, 0.7), ("PK", 94, -2.3, 0.22), ("PK", 6103, -5.3, 1.81), ("PK", 4103, 3.8, 4.69), ("PK", 6339, 1.5, 0.18), ("HSC", 10000, -1.2, 0.7), ("PK", 2503, -0.8, 3.03), ("PK", 59, -0.3, 1.39), ("PK", 82, 0.7, 3.97), ("PK", 2966, 1.0, 6.0)],
+    "AKG K371": [("LSC", 105, -2.7, 0.7), ("PK", 182, -2.3, 1.23), ("PK", 4038, 5.0, 3.6), ("PK", 67, 3.1, 1.41), ("PK", 1066, -0.8, 2.57), ("HSC", 10000, 2.4, 0.7), ("PK", 5564, -1.6, 3.89), ("PK", 4232, 0.9, 5.03), ("PK", 524, 0.3, 1.66), ("PK", 2048, 0.5, 4.67)],
+    "AKG K702": [("LSC", 105, 7.1, 0.7), ("PK", 119, -2.7, 0.23), ("PK", 9459, 3.2, 3.19), ("PK", 730, 3.2, 1.22), ("PK", 2241, -3.5, 3.8), ("HSC", 10000, -1.7, 0.7), ("PK", 3721, 3.4, 2.02), ("PK", 5483, -4.7, 4.79), ("PK", 2633, -2.0, 5.29), ("PK", 56, -0.6, 2.62)],
+    "AKG K712": [("LSC", 105, 6.9, 0.7), ("PK", 143, -3.6, 0.23), ("PK", 1217, 5.0, 1.43), ("PK", 3049, 4.8, 3.18), ("PK", 2178, -3.4, 3.3), ("HSC", 10000, -0.3, 0.7), ("PK", 5868, -2.6, 5.87), ("PK", 67, -0.6, 1.75), ("PK", 157, 0.9, 1.87), ("PK", 243, -0.5, 2.27)],
+    "Audio-Technica ATH-M40x": [("LSC", 105, 17.6, 0.7), ("PK", 48, -16.9, 0.29), ("PK", 348, 6.0, 0.87), ("PK", 5150, 3.3, 4.1), ("PK", 2979, 1.8, 1.99), ("HSC", 10000, -6.9, 0.7), ("PK", 1378, -1.4, 2.13), ("PK", 796, 0.6, 1.67), ("PK", 6306, 1.6, 5.1), ("PK", 2225, 0.8, 3.7)],
+    "Audio-Technica ATH-M50x": [("LSC", 105, 0.6, 0.7), ("PK", 156, -5.2, 0.73), ("PK", 326, 5.3, 1.59), ("PK", 7077, 2.8, 2.22), ("PK", 3483, 2.1, 5.82), ("HSC", 10000, -4.1, 0.7), ("PK", 45, -1.1, 1.9), ("PK", 66, 1.4, 3.59), ("PK", 787, -0.5, 1.79), ("PK", 1640, 0.9, 3.41)],
+    "HyperX Cloud II": [("LSC", 105, 4.1, 0.7), ("PK", 170, -7.0, 1.06), ("PK", 271, 3.7, 0.58), ("PK", 3828, 5.4, 3.6), ("PK", 57, -4.8, 0.58), ("HSC", 10000, -7.0, 0.7), ("PK", 8085, -3.0, 3.98), ("PK", 2378, -1.9, 2.78), ("PK", 3700, 1.3, 2.71), ("PK", 1123, 1.1, 3.29)],
+    "HyperX Cloud Alpha": [("LSC", 105, 7.1, 0.7), ("PK", 104, -5.9, 0.23), ("PK", 733, 4.5, 0.92), ("PK", 4324, 6.7, 2.87), ("PK", 6110, -3.0, 3.21), ("HSC", 10000, -5.6, 0.7), ("PK", 41, -0.4, 2.0), ("PK", 159, 0.5, 3.01), ("PK", 212, -0.5, 3.66), ("PK", 1964, 0.5, 4.33)],
+    "HIFIMAN Sundara": [("LSC", 105, 8.9, 0.7), ("PK", 56, -4.5, 0.4), ("PK", 971, -1.8, 1.62), ("PK", 2115, 2.1, 2.21), ("PK", 8270, 1.4, 0.96), ("HSC", 10000, -3.1, 0.7), ("PK", 246, -0.6, 1.21), ("PK", 128, 0.7, 1.44), ("PK", 59, -0.6, 2.26), ("PK", 35, 0.2, 1.56)],
+    "Philips SHP9500": [("LSC", 105, 6.5, 0.7), ("PK", 5734, -5.7, 2.84), ("PK", 110, -3.0, 0.81), ("PK", 2130, 3.7, 2.76), ("PK", 412, 1.0, 1.39), ("HSC", 10000, -2.4, 0.7), ("PK", 1113, -0.6, 2.07), ("PK", 7370, 2.1, 5.98), ("PK", 4477, -1.7, 6.0), ("PK", 3566, 1.3, 6.0)],
+    "SteelSeries Arctis Nova Pro Wireless (filaire)": [("LSC", 105, -4.1, 0.7), ("PK", 134, -5.8, 0.9), ("PK", 56, 4.4, 1.5), ("PK", 3993, 5.8, 3.24), ("PK", 341, 2.6, 2.32), ("HSC", 10000, -1.9, 0.7), ("PK", 6469, 3.7, 5.11), ("PK", 9152, 2.7, 2.58), ("PK", 1532, 2.0, 2.79), ("PK", 824, -1.4, 1.88)],
+}
+_RENDER_KEY = r"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
+_FX = "{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},"
+_FX_SLOTS = (1, 2, 5, 6, 7)                   # LFX, GFX, SFX, MFX, EFX
+_FX_MULTI = (13, 14, 15)
+_PROC_MODES = "{d3993a3f-99c2-4402-b5ec-a92a0367664b},"
+_DEFAULT_MODE = "{C18E2F7E-933D-4965-B7D1-1EEF228D2AF3}"
+_DISABLE_ENH = "{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5"
+_CHILD_APOS = r"SOFTWARE\EqualizerAPO\Child APOs"
+_NAME_PROP = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"
+_DEVICE_PROP = "{b3f8fa53-0004-438e-9003-51a46e139bfc},6"
+
+def biquad(kind, f0, gain, q, fs=48000.0):
+    """Coefficients (b0, b1, b2, a0, a1, a2) d'un filtre RBJ : PK, LSC ou HSC, comme Equalizer APO."""
+    a = 10 ** (gain / 40.0)
+    w0 = 2 * math.pi * min(f0, fs * 0.49) / fs
+    cw, alpha = math.cos(w0), math.sin(w0) / (2 * q)
+    if kind == "PK":
+        return 1 + alpha * a, -2 * cw, 1 - alpha * a, 1 + alpha / a, -2 * cw, 1 - alpha / a
+    s = 2 * math.sqrt(a) * alpha
+    if kind == "LSC":
+        return (a * ((a + 1) - (a - 1) * cw + s), 2 * a * ((a - 1) - (a + 1) * cw), a * ((a + 1) - (a - 1) * cw - s),
+                (a + 1) + (a - 1) * cw + s, -2 * ((a - 1) + (a + 1) * cw), (a + 1) + (a - 1) * cw - s)
+    if kind == "HSC":
+        return (a * ((a + 1) + (a - 1) * cw + s), -2 * a * ((a - 1) + (a + 1) * cw), a * ((a + 1) + (a - 1) * cw - s),
+                (a + 1) - (a - 1) * cw + s, 2 * ((a - 1) - (a + 1) * cw), (a + 1) - (a - 1) * cw - s)
+    raise ValueError(f"filtre inconnu: {kind}")
+
+def response_db(filters, freqs, fs=48000.0):
+    """Reponse totale (dB) d'une chaine de filtres aux frequences donnees."""
+    coefs = [biquad(*f, fs=fs) for f in filters]
+    out = []
+    for f in freqs:
+        z1 = cmath.exp(-1j * 2 * math.pi * f / fs)
+        z2 = z1 * z1
+        total = 0.0
+        for b0, b1, b2, a0, a1, a2 in coefs:
+            total += 20 * math.log10(max(1e-12, abs((b0 + b1 * z1 + b2 * z2) / (a0 + a1 * z1 + a2 * z2))))
+        out.append(total)
+    return out
+
+HP_GRID = [20 * (1000 ** (i / 199)) for i in range(200)]       # 20 Hz -> 20 kHz, echelle log
+
+def hp_filters(eq):
+    """Filtres a appliquer (correction du casque puis style) et preampli qui evite toute saturation."""
+    flt = [tuple(f) for f in HEADPHONES.get(eq.get("headphone") or "", [])]
+    flt += [("PK", f, float(g), HP_Q) for f, g in zip(HP_BANDS, eq["bands"]) if g]
+    peak = max(response_db(flt, HP_GRID)) if flt else 0.0
+    return flt, round(-max(0.0, peak) - (0.3 if peak > 0 else 0.0), 1)
+
+def hp_config_text(eq, active, why=""):
+    """Contenu de goxlr-mini.txt (ASCII seulement : Equalizer APO lit le fichier tel quel)."""
+    head = ["# GoXLR Mini : egaliseur du casque. Fichier genere : regle-le dans l'appli GoXLR Mini (page Casque)."]
+    if not active:
+        return "\n".join(head + ["# Egaliseur coupe" + (f" ({why})" if why else "") + "."]) + "\n"
+    flt, pre = hp_filters(eq)
+    style = HP_STYLES.get(eq.get("style") or "", {}).get("label") or ("profil " + eq["style"][7:] if str(eq.get("style") or "").startswith("custom:") else "reglage perso")
+    head.append("# Casque : " + (eq.get("headphone") or "sans correction") + " / style : " + style)
+    lines = head + ["Device: " + "; ".join("GoXLR " + c for c in eq["channels"]), f"Preamp: {pre:.1f} dB"]
+    for i, (kind, f0, g, q) in enumerate(flt, 1):
+        lines.append(f"Filter {i}: ON {kind} Fc {f0:g} Hz Gain {g:.1f} dB Q {q:.2f}")
+    lines.append("Device: all")
+    return ("\n".join(lines) + "\n").encode("ascii", "replace").decode("ascii")
+
+def normalize_hp_eq(src, base=None):
+    eq = copy.deepcopy(base) if base else {"enabled": False, "headphone": None, "style": "neutre", "bands": [0] * 10,
+                                            "custom": {}, "channels": ["Game", "Music", "System", "Chat"],
+                                            "pause_live": True}
+    src = src if isinstance(src, dict) else {}
+    if "enabled" in src:
+        eq["enabled"] = bool(src["enabled"])
+    if "headphone" in src:
+        eq["headphone"] = src["headphone"] if src["headphone"] in HEADPHONES else None
+    if isinstance(src.get("custom"), dict):
+        eq["custom"] = {str(k)[:40]: [_clamp(v, -12, 12) for v in (b or [])[:10]] + [0] * (10 - len((b or [])[:10]))
+                        for k, b in src["custom"].items() if str(k).strip()}
+    if isinstance(src.get("bands"), list):
+        eq["bands"] = [_clamp(v, -12, 12) for v in src["bands"][:10]] + [0] * (10 - len(src["bands"][:10]))
+    if "style" in src:
+        st = src["style"]
+        eq["style"] = st if st in HP_STYLES or (isinstance(st, str) and st.startswith("custom:") and st[7:] in eq["custom"]) else None
+    if isinstance(src.get("channels"), list):
+        eq["channels"] = [c for c in HP_CHANNELS if c in src["channels"]]
+    if "pause_live" in src:
+        eq["pause_live"] = bool(src["pause_live"])
+    return eq
+
+
+class EqApo:
+    """Equalizer APO sur les voies GoXLR : etat, installation, config. Simule hors de Windows (tests, Mac)."""
+
+    def __init__(self):
+        self.sim = SIMULATE or not IS_WINDOWS
+        self.sim_endpoints = {c: False for c in HP_CHANNELS}
+        self.sim_apo = False
+        self.lock = threading.Lock()
+        self.setup = None                     # {"running", "step", "error", "done"}
+        self.written = None                   # dernier contenu ecrit
+        self.last_auto = 0.0                  # dernier branchement automatique (nouveau port USB)
+
+    @property
+    def dir(self):
+        return os.path.join(DATA_DIR, "eqapo-sim") if self.sim else EQAPO_DIR
+
+    def installed(self):
+        if self.sim:
+            return self.sim_apo
+        return os.path.exists(os.path.join(EQAPO_DIR, "EqualizerAPO.dll"))
+
+    # -- voies GoXLR dans Windows --
+    def endpoints(self):
+        """Voies GoXLR presentes : nom -> {"guid", "installed"}."""
+        if self.sim:
+            return {c: {"guid": "{sim-" + c + "}", "installed": v} for c, v in self.sim_endpoints.items()}
+        import winreg as W
+        out = {}
+        try:
+            root = W.OpenKey(W.HKEY_LOCAL_MACHINE, _RENDER_KEY, 0, W.KEY_READ | W.KEY_WOW64_64KEY)
+        except OSError:
+            return out
+        with root:
+            i = 0
+            while True:
+                try:
+                    guid = W.EnumKey(root, i)
+                except OSError:
+                    break
+                i += 1
+                try:
+                    with W.OpenKey(root, guid) as k:
+                        if W.QueryValueEx(k, "DeviceState")[0] != 1:
+                            continue
+                    with W.OpenKey(root, guid + r"\Properties") as p:
+                        name = W.QueryValueEx(p, _NAME_PROP)[0]
+                        dev = W.QueryValueEx(p, _DEVICE_PROP)[0]
+                except OSError:
+                    continue
+                if "goxlr" not in str(dev).lower() or name not in HP_CHANNELS:
+                    continue
+                inst = False
+                try:
+                    with W.OpenKey(root, guid + r"\FxProperties") as fx:
+                        for slot in _FX_SLOTS:
+                            try:
+                                if str(W.QueryValueEx(fx, _FX + str(slot))[0]).upper() in (EQAPO_PRE, EQAPO_POST):
+                                    inst = True
+                            except OSError:
+                                pass
+                except OSError:
+                    pass
+                out[name] = {"guid": guid, "installed": inst}
+        return out
+
+    def install_endpoint(self, guid):
+        """Branche Equalizer APO sur une voie, comme son Device Selector (mode SFX/EFX, ou LFX/GFX si le pilote
+        n'a que ceux-la). Les valeurs d'origine sont gardees dans Child APOs pour pouvoir les remettre."""
+        if self.sim:
+            for c, v in self.endpoints().items():
+                if v["guid"] == guid:
+                    self.sim_endpoints[c] = True
+            return
+        import winreg as W
+        acc = W.KEY_READ | W.KEY_SET_VALUE | W.KEY_WOW64_64KEY
+        with W.OpenKey(W.HKEY_LOCAL_MACHINE, _RENDER_KEY + "\\" + guid + r"\FxProperties", 0, acc) as fx:
+            def get(name):
+                try:
+                    return str(W.QueryValueEx(fx, name)[0])
+                except OSError:
+                    return None
+            orig = {s: get(_FX + str(s)) for s in _FX_SLOTS}
+            if any((v or "").upper() in (EQAPO_PRE, EQAPO_POST) for v in orig.values()):
+                return
+            only_lg = (orig[1] or orig[2]) and not any(orig[s] for s in (5, 6, 7)) and not any(get(_FX + str(s)) for s in _FX_MULTI)
+            nv = lambda s: orig[s] if orig[s] is not None else "!VALUE"
+            if only_lg:
+                pre_child, post_child = nv(1), nv(2)
+            elif orig[5] is None and orig[7] is None:
+                pre_child, post_child = nv(1), nv(2)
+            else:
+                pre_child, post_child = nv(5), nv(7)
+            pre_child = "" if pre_child.startswith("!") else pre_child
+            post_child = "" if post_child.startswith("!") else post_child
+            with W.CreateKeyEx(W.HKEY_LOCAL_MACHINE, _CHILD_APOS + "\\" + guid, 0, W.KEY_ALL_ACCESS | W.KEY_WOW64_64KEY) as ch:
+                for s in _FX_SLOTS:
+                    W.SetValueEx(ch, _FX + str(s), 0, W.REG_SZ, nv(s))
+                W.SetValueEx(ch, "PreMixChild", 0, W.REG_SZ, pre_child)
+                W.SetValueEx(ch, "PostMixChild", 0, W.REG_SZ, post_child)
+                W.SetValueEx(ch, "AllowSilentBufferModification", 0, W.REG_SZ, "false")
+                W.SetValueEx(ch, "Version", 0, W.REG_SZ, "2")
+
+            def drop(name):
+                try:
+                    W.DeleteValue(fx, name)
+                except OSError:
+                    pass
+            if only_lg:
+                W.SetValueEx(fx, _FX + "1", 0, W.REG_SZ, EQAPO_PRE)
+                W.SetValueEx(fx, _FX + "2", 0, W.REG_SZ, EQAPO_POST)
+                for s in (5, 6, 7):
+                    drop(_FX + str(s))
+            else:
+                drop(_FX + "1")
+                drop(_FX + "2")
+                W.SetValueEx(fx, _FX + "5", 0, W.REG_SZ, EQAPO_PRE)
+                if get(_PROC_MODES + "5") is None:
+                    W.SetValueEx(fx, _PROC_MODES + "5", 0, W.REG_MULTI_SZ, [_DEFAULT_MODE])
+                W.SetValueEx(fx, _FX + "7", 0, W.REG_SZ, EQAPO_POST)
+                if get(_PROC_MODES + "7") is None:
+                    W.SetValueEx(fx, _PROC_MODES + "7", 0, W.REG_MULTI_SZ, [_DEFAULT_MODE])
+            drop(_DISABLE_ENH)
+
+    def uninstall_endpoint(self, guid):
+        """Remet les effets d'origine de la voie (ceux gardes a l'installation)."""
+        if self.sim:
+            for c, v in self.endpoints().items():
+                if v["guid"] == guid:
+                    self.sim_endpoints[c] = False
+            return
+        import winreg as W
+        try:
+            ch = W.OpenKey(W.HKEY_LOCAL_MACHINE, _CHILD_APOS + "\\" + guid, 0, W.KEY_READ | W.KEY_WOW64_64KEY)
+        except OSError:
+            return
+        with ch:
+            orig = {}
+            for s in _FX_SLOTS:
+                try:
+                    orig[s] = str(W.QueryValueEx(ch, _FX + str(s))[0])
+                except OSError:
+                    orig[s] = "!VALUE"
+        with W.OpenKey(W.HKEY_LOCAL_MACHINE, _RENDER_KEY + "\\" + guid + r"\FxProperties", 0,
+                       W.KEY_READ | W.KEY_SET_VALUE | W.KEY_WOW64_64KEY) as fx:
+            for s, v in orig.items():
+                if v.startswith("!"):
+                    try:
+                        W.DeleteValue(fx, _FX + str(s))
+                    except OSError:
+                        pass
+                else:
+                    W.SetValueEx(fx, _FX + str(s), 0, W.REG_SZ, v)
+        W.DeleteKeyEx(W.HKEY_LOCAL_MACHINE, _CHILD_APOS + "\\" + guid, W.KEY_WOW64_64KEY, 0)
+
+    def restart_audio(self):
+        """Le service audio recharge les effets des voies (2 secondes de silence)."""
+        if self.sim:
+            return
+        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", "Restart-Service -Name Audiosrv -Force"],
+                       capture_output=True, timeout=90, creationflags=0x08000000)
+
+    # -- configuration --
+    def take_config(self):
+        """config.txt d'Equalizer APO n'inclut plus que notre fichier (l'ancien est garde a cote)."""
+        cfg_dir = os.path.join(self.dir, "config")
+        os.makedirs(cfg_dir, exist_ok=True)
+        cfg = os.path.join(cfg_dir, "config.txt")
+        try:
+            with open(cfg, "r", encoding="utf-8-sig", errors="replace") as f:
+                cur = f.read()
+        except OSError:
+            cur = ""
+        if "Include: " + EQAPO_FILE in cur:
+            return
+        lines = ["# Gere par GoXLR Mini (page Casque de l'appli)."]
+        if cur.strip():
+            backup = "config.goxlr-mini-backup-" + time.strftime("%Y%m%d-%H%M%S") + ".txt"
+            with open(os.path.join(cfg_dir, backup), "w", encoding="utf-8") as f:
+                f.write(cur)
+            lines.append("# Configuration precedente : " + backup)
+        lines.append("Include: " + EQAPO_FILE)
+        with open(cfg, "w", encoding="ascii") as f:
+            f.write("\n".join(lines) + "\n")
+        log("Equalizer APO : configuration reprise par GoXLR Mini")
+
+    def write(self, text):
+        if text == self.written:
+            return False
+        cfg_dir = os.path.join(self.dir, "config")
+        if not os.path.isdir(cfg_dir):
+            return False
+        path = os.path.join(cfg_dir, EQAPO_FILE)
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="ascii") as f:
+            f.write(text)
+        os.replace(tmp, path)            # Equalizer APO relit le fichier des qu'il change
+        self.written = text
+        return True
+
+    # -- installation d'Equalizer APO lui-meme --
+    def download_and_install(self, step):
+        if self.sim:
+            step("Installation d'Equalizer APO…")
+            time.sleep(0.2)
+            self.sim_apo = True
+            return
+        step("Téléchargement d'Equalizer APO…")
+        work = tempfile.mkdtemp(prefix="goxlr-eqapo-")
+        try:
+            exe = os.path.join(work, "EqualizerAPO-x64-1.4.2.exe")
+            req = urllib.request.Request(EQAPO_URL, headers={"User-Agent": "GoXLR-Mini/" + VERSION})
+            h = hashlib.sha256()
+            with urllib.request.urlopen(req, timeout=60) as r, open(exe, "wb") as f:
+                total = 0
+                while True:
+                    chunk = r.read(65536)
+                    if not chunk:
+                        break
+                    total += len(chunk)
+                    if total > 40 * 1024 * 1024:
+                        raise ValueError("Téléchargement trop gros : installation refusée.")
+                    h.update(chunk)
+                    f.write(chunk)
+            if h.hexdigest() != EQAPO_SHA256:
+                raise ValueError("Empreinte d'Equalizer APO inattendue : installation refusée.")
+            step("Installation d'Equalizer APO…")
+            p = subprocess.Popen([exe, "/S"], creationflags=0x08000000)
+            t0 = time.monotonic()
+            while p.poll() is None and time.monotonic() - t0 < 300:
+                # l'installeur ouvre son Device Selector et l'attend : on fait son travail nous-memes
+                if "deviceselector" in list_processes():
+                    subprocess.run(["taskkill", "/f", "/im", "DeviceSelector.exe"], capture_output=True,
+                                   creationflags=0x08000000)
+                time.sleep(0.5)
+            if p.poll() is None:
+                p.kill()
+                raise ValueError("L'installation d'Equalizer APO ne se termine pas.")
+            if not self.installed():
+                raise ValueError("Equalizer APO ne s'est pas installé.")
+            log("Equalizer APO 1.4.2 installé")
+        finally:
+            shutil.rmtree(work, ignore_errors=True)
+
+    def status(self, eq, live):
+        eps = self.endpoints()
+        return {"apo": self.installed(), "endpoints": {c: (eps[c]["installed"] if c in eps else None) for c in HP_CHANNELS},
+                "live": live, "active": bool(self.written and "Filter" in self.written or self.written and "Preamp" in self.written),
+                "setup": dict(self.setup) if self.setup else None, "sim": self.sim}
+
 
 # ---------------- mises a jour (releases GitHub, comme Wispad) ----------------
 UPDATE_REPO = os.environ.get("GOXLR_UPDATE_REPO") or "samirmedani/goxlr-mini"
@@ -2823,6 +3356,7 @@ def run_apply_update(base_dir=None):
 ACTIONS = {"volume", "mute", "fader", "route", "colour", "mic", "raw", "profile", "dsp", "mic-preset",
            "scene", "scene-save", "scene-delete", "theme", "lighting", "detect-mic", "auto-gain", "voice-setup",
            "mic-listen", "job-cancel", "settings", "auto-scenes", "reconnect", "restart-engine",
+           "hp-eq", "hp-eq-save", "hp-eq-delete", "hp-eq-setup", "hp-eq-remove",
            "update-check", "update-install", "update-cancel", "update-ack", "update-remind"}
 ALIASES = {"mic-gain": "mic"}
 
