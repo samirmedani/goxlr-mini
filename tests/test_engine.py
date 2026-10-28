@@ -300,10 +300,11 @@ class Engine(unittest.TestCase):
         self.ctl.state["mic"] = {"type": "dynamic", "gain_db": 30}
         self.ctl._mark("mic")
         self.settle()
-        res = self._voice_setup({"voice_seconds": 2.5, "silence_seconds": 1.2})
+        res = self._voice_setup({"voice_seconds": 2.5, "silence_seconds": 1.2, "apply": True})
         self.settle()
         s, cal = self.ctl.state, res["cal"]
         self.assertEqual((res["type"], s["mic"]["type"], s["mic_preset"]), ("condenser", "condenser", "studio"))
+        self.assertTrue(s["fx"]["gate"] and s["fx"]["comp"], "« appliquer » allume les traitements du preregle")
         self.assertTrue(self.sim.dev.phantom, "48 V allume pour le micro statique")
         self.assertEqual(self.sim.dev.gains["condenser"], s["mic"]["gain_db"])
         self.assertTrue(-14.5 <= cal["voice_peak_db"] <= -9.5, cal)
@@ -322,6 +323,63 @@ class Engine(unittest.TestCase):
         self.ctl.act("mic-preset", {"name": "studio"})
         self.ctl.act("scene", {"name": "discord"})
         self.assertEqual(s["mic_preset"], "studio")
+
+    def test_regler_ma_voix_n_active_rien(self):
+        """Sans demande explicite, l'assistant cale le gain et prepare des reglages doux, sans rien allumer."""
+        self.sim.dev.mic_input = "condenser"
+        self.ctl.state["mic"] = {"type": "condenser", "gain_db": 30}
+        self.ctl._mark("mic")
+        self.settle()
+        res = self._voice_setup({"voice_seconds": 2.5, "silence_seconds": 1.2})
+        s = self.ctl.state
+        self.assertEqual(s["fx"], {k: False for k in g.FX_KEYS})
+        self.assertEqual(s["mic_preset"], "brut")
+        self.assertEqual(res["fx"], s["fx"])
+        params, effects = self.ctl._dsp_lists()
+        fx = dict(effects)
+        self.assertEqual((fx[0x0011], fx[0x013C], fx[0x0140], fx[0x000B]), (-59, 0, 0, 0), "rien de traite")
+        # gate allume a la main : doux, sous les passages calmes de la voix
+        self.ctl.act("fx", {"gate": True})
+        self.assertLessEqual(s["dsp"]["gate"]["threshold"], res["cal"]["voice_low_db"] - 10 + 1)
+        self.assertGreaterEqual(-g.gate_attenuation(s["dsp"]["gate"]["attenuation"]) - 0, 0)
+        self.assertLessEqual(-g.gate_attenuation(s["dsp"]["gate"]["attenuation"]), g.GATE_SOFT_DB)
+
+    def test_traitements_et_retour_micro(self):
+        s = self.ctl.state
+        self.assertEqual(g.default_state()["fx"], {k: False for k in g.FX_KEYS})
+        self.assertFalse(g.default_state()["routing"]["Microphone"]["Headphones"], "pas de retour micro par defaut")
+        # un preregle allume ses traitements, un interrupteur les coupe un par un
+        self.ctl.act("mic-preset", {"name": "studio"})
+        self.assertEqual(s["fx"], {"eq": True, "gate": True, "comp": True, "deesser": True})
+        self.ctl.act("fx", {"comp": False})
+        self.assertEqual(dict(self.ctl._dsp_lists()[1])[0x013C], 0, "compresseur coupe : 1:1")
+        self.assertEqual(s["mic_preset"], "custom")
+        self.ctl.act("fx", {"eq": False, "gate": False, "deesser": False})
+        self.assertEqual(s["mic_preset"], "brut")
+        # compresseur allume sur des reglages neutres : il reprend des valeurs douces
+        s["dsp"]["comp"].update(threshold=0, ratio=0, makeup=0)
+        self.ctl.act("fx", {"comp": True})
+        self.assertGreater(s["dsp"]["comp"]["ratio"], 0)
+        # les scenes integrees ne touchent ni aux traitements ni au retour micro
+        self.ctl.act("route", {"input": "Microphone", "output": "Headphones", "enabled": True})
+        before = dict(s["fx"])
+        self.ctl.act("scene", {"name": "gaming"})
+        self.assertEqual(s["fx"], before)
+        self.assertTrue(s["routing"]["Microphone"]["Headphones"])
+        self.ctl.act("scene", {"name": "streaming"})
+        self.assertTrue(s["routing"]["Microphone"]["Headphones"])
+
+    def test_migration_voix_naturelle(self):
+        """Un etat d'avant 4.8 (Studio actif, retour micro) repart en voix naturelle, sans retour casque."""
+        old = {"mic_preset": "studio", "dsp": g.MIC_PRESETS["studio"]["dsp"], "mic": {"type": "condenser", "gain_db": 33},
+               "routing": {"Microphone": {"Headphones": True}}}
+        st = g.normalize_state(old)
+        self.assertEqual(st["fx"], {k: False for k in g.FX_KEYS})
+        self.assertFalse(st["routing"]["Microphone"]["Headphones"])
+        self.assertEqual(st["mic_preset"], "brut")
+        kept = g.normalize_state(dict(old, fx={"gate": True}))
+        self.assertTrue(kept["routing"]["Microphone"]["Headphones"], "etat 4.8 : retour micro garde")
+        self.assertTrue(kept["fx"]["gate"])
 
     def test_regler_ma_voix_qui_sature(self):
         self.sim.dev.mic_input = "dynamic"

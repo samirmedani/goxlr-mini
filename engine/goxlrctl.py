@@ -71,7 +71,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.7.0"
+VERSION = "4.8.0"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -193,10 +193,12 @@ def _dsp(eq=(0, 0, 0, 0, 0, 0), gate=(True, -55, 40, 0, 19), comp=(-12, 6, 1, 9,
             "deesser": deesser}
 
 MIC_PRESETS = {
+    "brut": {"label": "Naturel", "desc": "Aucun traitement : ta voix telle quelle. Active ensuite ce que tu veux.",
+             "dsp": _dsp((0, 0, 0, 0, 0, 0), (False, -59, 0, 0, 19), (0, 0, 1, 9, 0), 0)},
+    "naturel": {"label": "Léger", "desc": "Ta voix juste stabilisée, traitements doux.",
+                "dsp": _dsp()},
     "studio": {"label": "Studio", "desc": "Voix de studio, nette et posée. Faite pour les micros statiques.",
                "dsp": _dsp((-3, -2, -2, 0, 2, 1), (True, -45, 96, 0, 20), (-24, 8, 3, 11, 6), 35)},
-    "naturel": {"label": "Naturel", "desc": "Ta voix telle quelle, juste stabilisée.",
-                "dsp": _dsp()},
     "radio": {"label": "Radio", "desc": "Voix pleine et présente, comme à l’antenne.",
               "dsp": _dsp((3, -2, -2, 0, 3, 2), (True, -48, 70, 0, 19), (-22, 9, 1, 9, 6), 30)},
     "stream": {"label": "Stream", "desc": "Claire et régulière, idéale en live.",
@@ -205,8 +207,6 @@ MIC_PRESETS = {
                 "dsp": _dsp((2, 0, -1, 0, 1, 1), (True, -50, 50, 0, 19), (-20, 7, 1, 9, 4), 15)},
     "anti-bruit": {"label": "Anti-bruit", "desc": "Coupe le clavier, le ventilo et le bruit de la pièce.",
                    "dsp": _dsp((-3, -1, 0, 1, 2, 1), (True, -35, 100, 0, 15), (-18, 8, 1, 9, 4), 25)},
-    "brut": {"label": "Brut", "desc": "Aucun traitement : le son du micro sans retouche.",
-             "dsp": _dsp((0, 0, 0, 0, 0, 0), (False, -59, 0, 0, 19), (0, 0, 1, 9, 0), 0)},
 }
 MIC_TYPE_PRESET = {"dynamic": "radio", "condenser": "studio", "jack": "stream"}
 # Avec une voix mesuree (assistant « Régler ma voix »), chaque preregle place ses seuils par rapport a cette voix et
@@ -220,12 +220,39 @@ PRESET_FIT = {
     "naturel": {"gate": -4, "att": 70, "comp": 4, "makeup": 0.5},
     "anti-bruit": {"gate": 3, "att": 100, "comp": 0, "makeup": 0.7},
 }
+# Traitements de la voix, chacun avec son interrupteur. Tous coupes par defaut : ta voix naturelle, puis ce
+# que tu choisis par-dessus. Les reglages d'un traitement coupe sont gardes, mais rien n'en part vers la GoXLR.
+FX_KEYS = ("eq", "gate", "comp", "deesser")
+GATE_SOFT_DB = 24             # attenuation max du noise gate des preregles (sauf Anti-bruit) : jamais de coupure seche
+
+def normalize_fx(src):
+    src = src if isinstance(src, dict) else {}
+    return {k: bool(src.get(k, False)) for k in FX_KEYS}
+
+def fx_from_dsp(d):
+    """Traitements qu'utilise un preregle."""
+    return {"eq": any(v for v in d["eq"].values()), "gate": bool(d["gate"]["enabled"]),
+            "comp": d["comp"]["ratio"] > 0, "deesser": d["deesser"] > 0}
+
+def effective_dsp(d, fx):
+    """Ce qui part vraiment vers la GoXLR : un traitement coupe est neutre (gate ouvert, compresseur 1:1 sans
+    compensation, egaliseur a plat, de-esser a zero)."""
+    e = copy.deepcopy(d)
+    e["gate"]["enabled"] = bool(fx["gate"])
+    if not fx["comp"]:
+        e["comp"].update(threshold=0, ratio=0, makeup=0)
+    if not fx["eq"]:
+        e["eq"] = {b: 0 for b in e["eq"]}
+    if not fx["deesser"]:
+        e["deesser"] = 0
+    return e
+
 CAL_LEVELS = ("noise_db", "noise_peak_db", "voice_low_db", "voice_db", "voice_peak_db")
 
 def gate_threshold(noise_peak, voice_low):
     """Seuil du noise gate : un peu au-dessus du bruit de la piece (et de ce que le micro entend du casque), bien
     sous les passages doux de la voix pour ne pas couper les fins de mots. Niveaux d'entree en dB."""
-    lo, hi = noise_peak + 6, voice_low - 6
+    lo, hi = noise_peak + 6, voice_low - 10
     if lo > hi:                       # bruit presque aussi fort que la voix : au milieu
         return (noise_peak + voice_low) / 2
     return min(noise_peak + max(6.0, min(12.0, 0.4 * (voice_low - noise_peak))), hi)
@@ -256,7 +283,7 @@ def fit_dsp(name, cal=None, gain_db=None):
     d["comp"]["makeup"] = _clamp(max(0.0, peak - thr) * (1 - 1 / RATIOS[d["comp"]["ratio"]]) * fit["makeup"], 0, 12)
     # le gate ferme doit descendre le bruit (releve ensuite par la compensation) sous RESIDUAL_NOISE_DB
     d["gate"]["attenuation"] = fit["att"] if fit["att"] is not None else \
-        gate_att_percent(max(noise, -72.2) + d["comp"]["makeup"] - RESIDUAL_NOISE_DB)
+        gate_att_percent(min(GATE_SOFT_DB, max(noise, -72.2) + d["comp"]["makeup"] - RESIDUAL_NOISE_DB))
     return d
 
 def _pct(sorted_vals, q):
@@ -265,7 +292,7 @@ def _pct(sorted_vals, q):
 def _routing(**over):
     on = lambda *outs: {o: o in outs for o in OUTPUTS}
     base = {
-        "Microphone": on("Headphones", "BroadcastMix", "ChatMic", "Sampler", "StreamMix2"),
+        "Microphone": on("BroadcastMix", "ChatMic", "Sampler", "StreamMix2"),      # retour casque : au choix
         "Chat": on("Headphones", "BroadcastMix", "LineOut", "StreamMix2"),
         "Music": on("Headphones", "BroadcastMix", "LineOut", "StreamMix2"),
         "Game": on("Headphones", "BroadcastMix", "LineOut", "StreamMix2"),
@@ -717,8 +744,9 @@ def default_state():
         "routing": _routing(),
         "colours": {t: ["00FFFF", "FFFFFF"] for t in COLOUR_TARGETS},
         "mic": {"type": "dynamic", "gain_db": 30},
-        "dsp": copy.deepcopy(MIC_PRESETS["naturel"]["dsp"]),
-        "mic_preset": "naturel",
+        "dsp": copy.deepcopy(MIC_PRESETS["naturel"]["dsp"]),   # reglages prets, mais...
+        "fx": normalize_fx(None),                            # ...aucun traitement actif : voix naturelle
+        "mic_preset": "brut",
         "mic_cal": None,                                # voix mesuree par l'assistant « Régler ma voix »
         "bleep_db": -10,
         "lighting": {"theme": "voies", "animation": "none", "mod1": 39, "mod2": 39, "waterfall": "off",
@@ -848,6 +876,16 @@ def normalize_state(src):
     if src.get("mic_preset") in MIC_PRESETS or src.get("mic_preset") == "custom":
         st["mic_preset"] = src["mic_preset"]
     st["mic_cal"] = normalize_cal(src.get("mic_cal"))
+    if "fx" in src:
+        st["fx"] = normalize_fx(src["fx"])
+    elif src:
+        # etat d'avant 4.8 : traitements et retour micro s'activaient tout seuls. On repart de la voix naturelle,
+        # sans retour casque ; les reglages sont recales en douceur pour le jour ou tu les actives.
+        st["fx"] = normalize_fx(None)
+        st["routing"]["Microphone"]["Headphones"] = False
+        st["mic_preset"] = "brut"
+        cal = st["mic_cal"] if st["mic_cal"] and st["mic_cal"]["type"] == st["mic"]["type"] else None
+        st["dsp"] = fit_dsp("naturel", cal, st["mic"]["gain_db"])
     st["hp_eq"] = normalize_hp_eq(src.get("hp_eq"))
     if "bleep_db" in src:
         st["bleep_db"] = _clamp(src["bleep_db"], -36, 0)
@@ -987,6 +1025,32 @@ class Controller:
     def _preset_dsp(self, name):
         return fit_dsp(name, self._cal_for(), self.state["mic"]["gain_db"])
 
+    def _refit(self):
+        """Reglages du preregle courant recales sur la voix mesuree ; « Naturel » (aucun traitement) garde
+        des reglages doux prets pour le jour ou tu allumes un traitement."""
+        name = self.state["mic_preset"]
+        return self._preset_dsp("naturel" if name == "brut" else name)
+
+    def _set_fx(self, p):
+        """Interrupteurs des traitements. Un traitement allume sur des reglages neutres (compresseur 1:1,
+        de-esser a zero) reprend les reglages doux du preregle Leger, cales sur ta voix si elle est mesuree."""
+        s = self.state
+        soft = self._preset_dsp("naturel")
+        for k in FX_KEYS:
+            if k not in p:
+                continue
+            on = parse_bool(p[k])
+            if on and not s["fx"][k]:
+                if k == "comp" and s["dsp"]["comp"]["ratio"] == 0:
+                    s["dsp"]["comp"] = copy.deepcopy(soft["comp"])
+                elif k == "deesser" and s["dsp"]["deesser"] == 0:
+                    s["dsp"]["deesser"] = 20
+                elif k == "gate":
+                    s["dsp"]["gate"]["enabled"] = True
+            s["fx"][k] = on
+        s["mic_preset"] = "custom" if any(s["fx"].values()) else "brut"
+        self._mark("dsp")
+
     USB_NOTES = {
         "none": "Windows ne voit aucune GoXLR sur l’USB : si elle est allumée, son câble ne fait peut-être que charger, "
                 "ou le port n’est pas relié au PC",
@@ -1096,7 +1160,8 @@ class Controller:
 
     def _dsp_lists(self):
         s = self.state
-        dsp, g, c = s["dsp"], s["dsp"]["gate"], s["dsp"]["comp"]
+        dsp = effective_dsp(s["dsp"], s["fx"])
+        g, c = dsp["gate"], dsp["comp"]
         thr = g["threshold"] if g["enabled"] else -59
         att = gate_attenuation(g["attenuation"] if g["enabled"] else 0)
         params = [(0x30200, f32(thr)), (0x30400, f32(g["attack"])), (0x30600, f32(g["release"])),
@@ -1585,10 +1650,12 @@ class Controller:
             s["mic"] = {"type": mtype, "gain_db": _clamp(gain if gain is not None else s["mic"]["gain_db"], 0, 72)}
             self._mark("mic")
             if s["mic"] != before and s["mic_preset"] in MIC_PRESETS and self._cal_for():
-                s["dsp"] = self._preset_dsp(s["mic_preset"])      # seuils toujours places par rapport a ta voix
+                s["dsp"] = self._refit()      # seuils toujours places par rapport a ta voix
                 self._mark("dsp")
         elif action == "dsp":
             s["dsp"] = normalize_dsp(p, s["dsp"])
+            if "enabled" in (p.get("gate") or {}):
+                s["fx"]["gate"] = bool(p["gate"]["enabled"])
             if "bleep_db" in p:
                 s["bleep_db"] = _clamp(p["bleep_db"], -36, 0)
             s["mic_preset"] = "custom"
@@ -1597,9 +1664,13 @@ class Controller:
             name = p["name"]
             if name not in MIC_PRESETS:
                 raise ValueError(f"préréglage micro inconnu: {name}")
-            s["dsp"] = self._preset_dsp(name)
+            # « Naturel » coupe tout mais garde des reglages doux prets, pour allumer ensuite un seul traitement
+            s["dsp"] = self._preset_dsp("naturel" if name == "brut" else name)
+            s["fx"] = normalize_fx(None) if name == "brut" else fx_from_dsp(s["dsp"])
             s["mic_preset"] = name
             self._mark("dsp")
+        elif action == "fx":
+            self._set_fx(p)
         elif action == "scene":
             self._apply_scene(p["name"], p.get("with_mic", True))
         elif action == "scene-save":
@@ -1699,11 +1770,10 @@ class Controller:
         if name in SCENES:
             sc = SCENES[name]
             s["faders"] = dict(sc["faders"])
+            monitor = s["routing"]["Microphone"]["Headphones"]
             s["routing"] = copy.deepcopy(sc["routing"])
-            # une voix mesuree (« Régler ma voix ») est personnelle : la scene ne change alors que routage et volumes
-            if with_mic and sc.get("mic_preset") and not self._cal_for():
-                s["dsp"] = self._preset_dsp(sc["mic_preset"])
-                s["mic_preset"] = sc["mic_preset"]
+            # ta voix et ton retour casque sont a toi : une scene integree ne change que faders et routage
+            s["routing"]["Microphone"]["Headphones"] = monitor
             if s["lighting"]["theme"] == "voies":
                 self._theme_colours()
         elif name in s["user_scenes"]:
@@ -1829,7 +1899,7 @@ class Controller:
             s["mic"]["gain_db"] = new
             gen = self._mark("mic")
             if s["mic_preset"] in MIC_PRESETS and self._cal_for():
-                s["dsp"] = self._preset_dsp(s["mic_preset"])      # les seuils suivent le gain
+                s["dsp"] = self._refit()      # les seuils suivent le gain
                 gen = self._mark("dsp")
         self._wait_applied(gen)
         return {"old_gain_db": old, "new_gain_db": new, "voice_peak_db": peak, "target_db": target_db,
@@ -1935,14 +2005,18 @@ class Controller:
         with self.lock:
             s["mic"] = {"type": mtype, "gain_db": new_gain}
             s["mic_cal"] = cal
-            s["dsp"] = fit_dsp(style, cal, new_gain)
-            s["mic_preset"] = style
+            if not (p.get("apply") or any(s["fx"].values())):
+                style = "naturel"                            # rien d'actif : des reglages doux, prets
+            s["dsp"] = fit_dsp(style, cal, new_gain)        # actives seulement si tu le choisis
+            if p.get("apply"):
+                s["fx"] = fx_from_dsp(s["dsp"])
+            s["mic_preset"] = style if any(s["fx"].values()) else "brut"
             gen = self._mark("mic", "dsp")
         self._wait_applied(gen)
         dsp = s["dsp"]
         log(f"Voix réglée : micro {mtype}, gain {new_gain} dB, bruit {cal['noise_peak_db']} dB, voix {cal['voice_db']} dB "
             f"(crêtes {cal['voice_peak_db']}), noise gate {dsp['gate']['threshold']} dB, compresseur {dsp['comp']['threshold']} dB")
-        return {"type": mtype, "gain_db": new_gain, "preset": style, "cal": cal,
+        return {"type": mtype, "gain_db": new_gain, "preset": style, "cal": cal, "fx": dict(s["fx"]),
                 "snr_db": round(cal["voice_db"] - cal["noise_peak_db"], 1),
                 "gate": dict(dsp["gate"], attenuation_db=gate_attenuation(dsp["gate"]["attenuation"])),
                 "comp": dict(dsp["comp"], ratio_x=RATIOS[dsp["comp"]["ratio"]]), "deesser": dsp["deesser"],
@@ -3356,7 +3430,7 @@ def run_apply_update(base_dir=None):
 ACTIONS = {"volume", "mute", "fader", "route", "colour", "mic", "raw", "profile", "dsp", "mic-preset",
            "scene", "scene-save", "scene-delete", "theme", "lighting", "detect-mic", "auto-gain", "voice-setup",
            "mic-listen", "job-cancel", "settings", "auto-scenes", "reconnect", "restart-engine",
-           "hp-eq", "hp-eq-save", "hp-eq-delete", "hp-eq-setup", "hp-eq-remove",
+           "fx", "hp-eq", "hp-eq-save", "hp-eq-delete", "hp-eq-setup", "hp-eq-remove",
            "update-check", "update-install", "update-cancel", "update-ack", "update-remind"}
 ALIASES = {"mic-gain": "mic"}
 

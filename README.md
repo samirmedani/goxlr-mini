@@ -38,7 +38,7 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 <td width="50%"><img src="docs/captures/routing.jpg" alt="Page Routage"></td>
 </tr>
 <tr>
-<td><b>Micro</b> : <b>« Régler ma voix »</b> trouve ton micro (48 V compris) et cale gain, noise gate et compresseur sur ta voix et ta pièce en 20 secondes ; « M'écouter » enregistre ta voix et te la fait réécouter ; sept préréglages dont Studio, égaliseur, de-esser. Bouton micro en bascule, <i>maintenir pour couper</i> ou <i>appuyer pour parler</i>.</td>
+<td><b>Micro</b> : ta voix naturelle par défaut. Égaliseur, noise gate, compresseur et de-esser ont chacun leur interrupteur ; <b>« Régler ma voix »</b> trouve ton micro (48 V compris), cale le gain et prépare des réglages doux sans les allumer ; « M'écouter » enregistre ta voix et te la fait réécouter ; retour micro dans le casque au choix. Bouton micro en bascule, <i>maintenir pour couper</i> ou <i>appuyer pour parler</i>.</td>
 <td><b>Routage</b> : qui entend quoi (toi, ton stream, Discord, la VOD, les enceintes). <b>VOD sans musique</b> : la VOD reçoit le stream sans la musique, anti-DMCA.</td>
 </tr>
 <tr>
@@ -79,12 +79,13 @@ et reprend la GoXLR dès qu'elle est rebranchée.
   <img src="docs/captures/voice.jpg" width="720" alt="Régler ma voix : micro statique trouvé, gain, noise gate et compresseur calés sur la voix et la pièce">
 </p>
 
-1. Page **Micro › Régler ma voix** : parle une dizaine de secondes, puis tais-toi quelques secondes. Écoute le
-   résultat avec **M'écouter** : 8 secondes enregistrées, puis rejouées telles que les entend Discord.
+1. Page **Micro › Régler ma voix** : parle une dizaine de secondes, puis tais-toi quelques secondes. Le gain se
+   cale sur ta voix ; aucun traitement ne s'allume. Allume ensuite, un par un, ceux qui t'aident (noise gate si le
+   bruit de fond gêne, compresseur pour une voix plus régulière) et vérifie avec **M'écouter**.
 2. **Windows** : micro par défaut « Chat Mic », sortie « System ». L'appli le vérifie et le corrige en un clic
    (conseil dans Scènes).
-3. **Discord** : micro « Chat Mic », sortie « Chat ». Coupe la suppression de bruit, l'annulation d'écho et le
-   réglage automatique du gain de Discord : la GoXLR s'en charge déjà.
+3. **Discord** : micro « Chat Mic », sortie « Chat ». Coupe l'annulation d'écho et le réglage automatique du
+   gain de Discord. Pour le bruit de fond, choisis : noise gate de la GoXLR ou suppression de bruit de Discord.
 4. **OBS** : une seule source audio, « Broadcast Stream Mix » ; « Audio du bureau » désactivé. Ce qui part en
    live se choisit dans la page Routage.
 5. Branche la GoXLR **toujours sur le même port USB** : sur un autre port, Windows crée de nouveaux périphériques

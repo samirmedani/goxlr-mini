@@ -223,6 +223,8 @@ header p{color:var(--text2);font-size:15px;margin-top:6px}
 .row-switch + .row-switch{border-top:.5px solid var(--hair)}
 .row-switch b{font-weight:600;font-size:14px;display:block}
 .row-switch small{color:var(--text2);font-size:12.5px;display:block;margin-top:2px;line-height:1.4}
+.fx-off{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:12px;background:rgba(120,120,128,.08);color:var(--text2);font-size:12.5px}
+.fx-off svg{width:16px;height:16px;flex:none}.fx-off span{flex:1}.fx-off .pill{height:28px;padding:0 12px}
 
 /* routage */
 .route-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
@@ -553,8 +555,23 @@ var MUTE_VERB = {all: "Couper", stream: "Couper du stream", chat: "Couper de Dis
 var MUTED_TXT = {all: "Coupé", stream: "Coupé du stream", chat: "Coupé de Discord", phones: "Coupé du casque", lineout: "Coupé des enceintes"};
 var MIC_MODES = [["toggle", "Bascule"], ["hold", "Maintenir = coupé"], ["ptt", "Maintenir = parler"]];
 var MIC_TYPE_LABELS = {dynamic:"Dynamique", condenser:"Statique +48 V", jack:"Jack 3,5 mm"};
-var PRESET_ICONS = {studio:"micVocal", naturel:"leaf", radio:"radio", stream:"BroadcastMix", podcast:"Mic", "anti-bruit":"shield", brut:"circle"};
-var PRESET_COLOURS = {studio:"#5E5CE6", naturel:"#30D158", radio:"#FF9F0A", stream:"#BF5AF2", podcast:"#FF375F", "anti-bruit":"#64D2FF", brut:"#8E8E93"};
+var PRESET_ICONS = {studio:"micVocal", naturel:"audioLines", radio:"radio", stream:"BroadcastMix", podcast:"Mic", "anti-bruit":"shield", brut:"leaf"};
+var PRESET_COLOURS = {studio:"#5E5CE6", naturel:"#64D2FF", radio:"#FF9F0A", stream:"#BF5AF2", podcast:"#FF375F", "anti-bruit":"#8E8E93", brut:"#30D158"};
+var FX_INFO = [["eq", "Égaliseur", "Ajuste les graves, les médiums et les aigus de ta voix."],
+  ["gate", "Noise gate", "Baisse le micro entre tes phrases (clavier, ventilo). Trop fort, il coupe tes fins de mots."],
+  ["comp", "Compresseur", "Rapproche les passages forts et faibles. Trop fort, ta voix paraît écrasée."],
+  ["deesser", "De-esser", "Adoucit les « s » et les « ch » qui sifflent."]];
+function fxAny() { var f = S.state.fx || {}; return FX_INFO.some(function (x) { return f[x[0]]; }); }
+function fxSet(k, v) {
+  var patch = {}; patch[k] = v; S.state.fx[k] = v; renderMic();
+  post("fx", patch).then(refresh);
+}
+function monitorSet(on) {
+  var st = S.state; st.routing.Microphone.Headphones = on; renderMic();
+  var p = post("route", {input: "Microphone", output: "Headphones", enabled: on});
+  if (on && st.volumes.MicMonitor < 26) p = p.then(function () { return post("volume", {channel: "MicMonitor", value: 102}); });
+  p.then(refresh);
+}
 var SCENE_ICONS = {streaming:"BroadcastMix", "stream-safe":"shield", gaming:"Game", discord:"Chat", podcast:"Mic", ecoute:"Headphones"};
 var SCENE_COLOURS = {streaming:"#BF5AF2", "stream-safe":"#30D158", gaming:"#30D158", discord:"#5E5CE6", podcast:"#FF375F", ecoute:"#FF9F0A"};
 var ANIM_LABELS = {"none":"Aucune", "retro-rainbow":"Arc-en-ciel rétro", "rainbow-dark":"Arc-en-ciel doux", "rainbow-bright":"Arc-en-ciel vif", "simple":"Respiration", "ripple":"Ondulation"};
@@ -976,13 +993,26 @@ function buildMic() {
   mic.blinkSw.addEventListener("click", function () { var v = !S.state.mic_button.blink; S.state.mic_button.blink = v; renderMic(); post("settings", {mic_button: {blink: v}}); });
   bl.appendChild(mic.blinkSw); mbf.appendChild(bl);
   muteCard.appendChild(mbf);
-  var mon = h("div", {"class": "field"}, '<div class="field-top">Retour micro dans le casque<span id="mon-val"></span></div>');
+  var monSw = h("div", {"class": "row-switch", style: "padding-bottom:0"}, '<div><b>M\u2019entendre dans le casque</b><small id="mon-sub"></small></div>');
+  mic.monSw = h("button", {"class": "switch"});
+  mic.monSw.addEventListener("click", function () { monitorSet(!S.state.routing.Microphone.Headphones); });
+  monSw.appendChild(mic.monSw); muteCard.appendChild(monSw);
+  var mon = h("div", {"class": "field", id: "mon-field"}, '<div class="field-top">Volume du retour<span id="mon-val"></span></div>');
   mic.mon = Slider({min: 0, max: 255, step: 1, colour: "#FF6961", onInput: function (v) { S.state.volumes.MicMonitor = v; $("mon-val").textContent = pct(v) + " %"; volumeSender("MicMonitor")(v); }, onCommit: function (v) { post("volume", {channel: "MicMonitor", value: v}); }});
   mon.appendChild(mic.mon.el); muteCard.appendChild(mon);
   left.appendChild(muteCard);
   grid.appendChild(left);
 
   var right = h("div", {style: "display:flex;flex-direction:column;gap:16px;min-width:0"});
+  var fxc = h("div", {"class": "card"}, '<h3>Traitements de ta voix<small id="fx-hint"></small></h3>');
+  mic.fxSw = {};
+  FX_INFO.forEach(function (x) {
+    var row = h("div", {"class": "row-switch"}, "<div><b>" + x[1] + "</b><small>" + x[2] + "</small></div>");
+    var sw = h("button", {"class": "switch", "aria-label": x[1]});
+    sw.addEventListener("click", function () { fxSet(x[0], !S.state.fx[x[0]]); });
+    row.appendChild(sw); fxc.appendChild(row); mic.fxSw[x[0]] = sw;
+  });
+  right.appendChild(fxc);
   var pc = h("div", {"class": "card"}, '<h3>Préréglages de voix<small id="preset-hint"></small></h3>');
   var pg = h("div", {"class": "presets"});
   mic.presetBtns = {};
@@ -1000,6 +1030,7 @@ function buildMic() {
   var tabs = h("div", {"class": "tabs"});
   var panes = h("div");
   mic.tabs = {};
+  fine.appendChild(h("div", {"class": "fx-off", id: "fx-off"}));
   [["eq", "Égaliseur"], ["gate", "Noise gate"], ["comp", "Compresseur"], ["more", "De-esser & bip"]].forEach(function (t, i) {
     var b = h("button", {}, t[1]);
     b.addEventListener("click", function () { showTab(t[0]); });
@@ -1024,10 +1055,7 @@ function buildMic() {
   mic.tabs.eq.pane = eq;
   // gate
   var gate = h("div");
-  var gs = h("div", {"class": "row-switch"}, '<div><b>Noise gate</b><small>Coupe le micro quand tu ne parles pas : fini le clavier et le ventilateur.</small></div>');
-  mic.gateSw = h("button", {"class": "switch"});
-  mic.gateSw.addEventListener("click", function () { S.state.dsp.gate.enabled = !S.state.dsp.gate.enabled; renderMic(); post("dsp", {gate: {enabled: S.state.dsp.gate.enabled}}); });
-  gs.appendChild(mic.gateSw); gate.appendChild(gs);
+  gate.appendChild(h("p", {"class": "muted-txt", style: "margin-bottom:6px"}, "Baisse le micro quand tu ne parles pas. Garde le seuil bien sous ta voix calme."));
   mic.gateThr = fineSlider(gate, "Seuil", -59, 0, function (v) { return v + " dB"; }, function (v) { S.state.dsp.gate.threshold = v; dspSend({gate: {threshold: v}}); });
   mic.gateAtt = fineSlider(gate, "Réduction", 0, 100, function (v) { return v + " %"; }, function (v) { S.state.dsp.gate.attenuation = v; dspSend({gate: {attenuation: v}}); });
   mic.tabs.gate.pane = gate;
@@ -1062,7 +1090,16 @@ function fineSlider(parent, label, min, max, fmt, onInput) {
 function showTab(k) {
   mic.tab = k;
   Object.keys(mic.tabs).forEach(function (t) { mic.tabs[t].btn.classList.toggle("on", t === k); mic.tabs[t].pane.style.display = t === k ? "" : "none"; });
+  fxOffNote();
   if (k === "eq") requestAnimationFrame(drawEq);
+}
+function fxOffNote() {
+  var el = $("fx-off"); if (!el || !S) return;
+  var key = {eq: "eq", gate: "gate", comp: "comp", more: "deesser"}[mic.tab || "eq"], info = FX_INFO.filter(function (x) { return x[0] === key; })[0];
+  var off = !S.state.fx[key];
+  el.style.display = off ? "" : "none";
+  if (off) el.innerHTML = svg("info") + "<span>" + info[1] + " coupé : ces réglages ne s\u2019appliquent pas.</span>";
+  if (off && !el.querySelector("button")) el.appendChild(h("button", {"class": "pill", onclick: function () { fxSet(key, true); }}, "Allumer"));
 }
 function drawEq() {
   var cv = mic.eqCanvas; if (!cv || !cv.offsetWidth) return;
@@ -1103,30 +1140,37 @@ function renderMic() {
   mic.mbSeg.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.m === st.mic_button.mode); });
   mic.mbTarget.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.t === st.mic_button.target); });
   mic.blinkSw.classList.toggle("on", !!st.mic_button.blink);
+  var monOn = !!st.routing.Microphone.Headphones;
+  mic.monSw.classList.toggle("on", monOn);
+  $("mon-sub").textContent = monOn ? "Tu entends ta voix dans le casque, en direct." : "Coupé : tu n\u2019entends pas ta voix dans le casque.";
+  $("mon-field").style.display = monOn ? "" : "none";
   mic.mon.set(st.volumes.MicMonitor); if (!mic.mon.busy()) $("mon-val").textContent = pct(st.volumes.MicMonitor) + " %";
+  FX_INFO.forEach(function (x) { mic.fxSw[x[0]].classList.toggle("on", !!st.fx[x[0]]); });
+  var on = FX_INFO.filter(function (x) { return st.fx[x[0]]; }).map(function (x) { return x[1].toLowerCase(); });
+  $("fx-hint").textContent = on.length ? "Actifs : " + on.join(", ") : "Aucun : ta voix naturelle";
+  fxOffNote();
   var rec = S.meta.mic_type_preset[st.mic.type];
   Object.keys(mic.presetBtns).forEach(function (k) {
-    var b = mic.presetBtns[k]; b.classList.toggle("on", st.mic_preset === k);
+    var b = mic.presetBtns[k]; b.classList.toggle("on", fxAny() ? st.mic_preset === k : k === "brut");
     var tag = b.querySelector(".tag");
     if (k === rec && !tag) b.appendChild(h("span", {"class": "tag"}, "CONSEILLÉ"));
     if (k !== rec && tag) tag.remove();
   });
   $("preset-hint").textContent = st.mic_preset === "custom" ? "Réglage personnalisé" : "";
   S.meta.eq_bands.forEach(function (b) { var e = mic.eq[b], v = st.dsp.eq[b]; e.sl.set(v); if (!e.sl.busy()) e.lab.textContent = (v > 0 ? "+" : "") + v + " dB"; });
-  mic.gateSw.classList.toggle("on", st.dsp.gate.enabled);
   mic.gateThr.set(st.dsp.gate.threshold); mic.gateAtt.set(st.dsp.gate.attenuation);
   mic.compThr.set(st.dsp.comp.threshold); mic.compRatio.set(st.dsp.comp.ratio); mic.compMake.set(st.dsp.comp.makeup);
   mic.deess.set(st.dsp.deesser); mic.bleep.set(st.bleep_db);
   $("mic-state").textContent = mms ? MUTED_TXT[mms] : MIC_TYPE_LABELS[st.mic.type];
   var HINTS = {dynamic: "<b>Micro dynamique</b> (SM7B, PodMic…) : il demande 45 à 60 dB de gain. « Régler ma voix » le trouve pour toi.",
-    condenser: "<b>Micro statique</b> : il reçoit le 48 V et capte toute la pièce. Le préréglage Studio, calé par « Régler ma voix », garde ta voix nette et coupe le bruit entre tes phrases.",
+    condenser: "<b>Micro statique</b> : il reçoit le 48 V et capte toute la pièce. Si le bruit de fond te gêne, allume seulement le noise gate, puis écoute-toi.",
     jack: "<b>Micro de casque</b> : 20 à 30 dB suffisent souvent. Le préréglage Stream le rend plus clair."};
   mic.hintTxt = HINTS[st.mic.type];
   $("preset-hint").innerHTML = st.mic_preset === "custom" ? "Réglage personnalisé" : "";
   var ph = $("preset-tip"); if (ph) ph.innerHTML = HINTS[st.mic.type];
   var cal = micCal(), cl = $("cal-line");
   var calHtml = cal ? svg("ok") + "<span>Voix mesurée le " + frDate(cal.t * 1000) + " : bruit de la pièce " + dbTxt(cal.noise_peak_db + st.mic.gain_db - cal.gain_db) + ", ta voix " + Math.round(cal.voice_db - cal.noise_peak_db) + " dB au-dessus.</span>"
-    : svg("info") + "<span>Pas encore mesurée : « Régler ma voix » cale le gain, le noise gate et le compresseur sur ta voix et ta pièce, en 20 secondes.</span>";
+    : svg("info") + "<span>Pas encore mesurée : « Régler ma voix » cale le gain sur ta voix en 20 secondes et prépare des traitements doux, sans les allumer.</span>";
   if (cl && cl._h !== calHtml) { cl._h = calHtml; cl.innerHTML = calHtml; cl.classList.toggle("ok", !!cal); }
   if (mic.tab === "eq") drawEq();
 }
@@ -1700,13 +1744,11 @@ function advices() {
   if (s.mutes.Mic) a.push({lvl: "warn", t: "Ton micro est coupé", d: "Personne ne t\u2019entend en ce moment.", label: "Réactiver", fn: function () { return post("mute", {channel: "Mic", muted: false}); }});
   else if (s.partial.Mic) a.push({lvl: "warn", t: "Micro " + MUTED_TXT[s.partial.Mic].toLowerCase(), d: "Une partie de ton public ne t\u2019entend pas.", label: "Réactiver", fn: function () { return post("mute", {channel: "Mic", muted: false}); }});
   if (L && L.live.mic_db <= -72 && !s.mutes.Mic) a.push({lvl: "warn", t: "Aucun son du micro", d: s.mic.type === "condenser" ? "Vérifie le câble XLR, puis lance « Régler ma voix »." : "Un micro statique ne marche qu\u2019avec le 48 V : « Régler ma voix » le détecte et l\u2019allume.", label: "Régler ma voix", fn: voice});
-  else if (!micCal()) a.push({t: "Ta voix n\u2019est pas encore réglée", d: "20 secondes pour caler le gain, le noise gate et le compresseur sur ta voix et ta pièce.", label: "Régler ma voix", fn: voice});
+  else if (!micCal()) a.push({t: "Ta voix n\u2019est pas encore réglée", d: "20 secondes pour caler le gain sur ta voix. Aucun traitement n\u2019est allumé sans ton accord.", label: "Régler ma voix", fn: voice});
   if (s.routing.Chat.ChatMic) a.push({lvl: "warn", t: "Écho dans Discord", d: "Le chat est renvoyé vers le chat : tes amis s\u2019entendent eux-mêmes.", label: "Corriger", fn: function () { return post("route", {input: "Chat", output: "ChatMic", enabled: false}); }});
   winAdvice(a);
   if (s.routing.System.BroadcastMix) a.push({t: "Tes notifications passent en live", d: "Les sons Windows sont envoyés au stream.", label: "Les retirer", fn: function () { return post("route", {input: "System", output: "BroadcastMix", enabled: false}); }});
   if (s.mic.type === "dynamic" && s.mic.gain_db < 40 && !micCal()) a.push({t: "Gain bas pour un micro dynamique", d: "Il est à " + s.mic.gain_db + " dB ; un micro dynamique demande souvent 45 à 60 dB.", label: "Régler ma voix", fn: voice});
-  if (s.routing.Microphone.Headphones && s.volumes.MicMonitor > 64) a.push({t: "Tu t\u2019entends dans le casque", d: "Retour micro à " + pct(s.volumes.MicMonitor) + " %. Pratique pour se contrôler, gênant sinon.", label: "Couper le retour", fn: function () { return post("volume", {channel: "MicMonitor", value: 0}); }});
-  if (s.mic_preset === "brut" || (!s.dsp.gate.enabled && s.mic_preset === "custom")) a.push({t: "Voix sans traitement", d: "Un préréglage rend ta voix plus claire et coupe le bruit de fond.", label: "Essayer « Stream »", fn: function () { return post("mic-preset", {name: "stream"}); }});
   var onF = S.meta.faders.map(function (f) { return s.faders[f]; });
   if (onF.indexOf("Mic") < 0) a.push({t: "Micro hors des faders", d: "Tu le coupes avec le bouton de toux ; son volume se règle dans Mixeur."});
   if (s.volumes.Headphones < 64) a.push({t: "Casque très bas", d: "Il est à " + pct(s.volumes.Headphones) + " %.", label: "Remonter à 80 %", fn: function () { return post("volume", {channel: "Headphones", value: 204}); }});
@@ -1949,7 +1991,7 @@ var VOICE_PHASE = {
   detect: ["radar", "Dis quelques mots", "J\u2019essaie l\u2019entrée XLR, avec et sans l\u2019alimentation 48 V, puis le jack."],
   voice: ["audioLines", "Parle comme en live", "Lis ce texte à voix haute, à ton volume habituel :"],
   silence: ["volumeX", "Silence…", "Ne parle plus et laisse le son du casque comme d\u2019habitude : je mesure ce que le micro entend entre tes phrases."],
-  apply: ["sparkles", "Presque fini", "Gain, noise gate et compresseur se calent sur tes mesures."]
+  apply: ["sparkles", "Presque fini", "Le gain se cale sur tes mesures."]
 };
 var MIC_TYPE_LONG = {condenser: "Statique · 48 V", dynamic: "Dynamique", jack: "Jack 3,5 mm"};
 function voiceIntro() {
@@ -1957,7 +1999,7 @@ function voiceIntro() {
   if (S.state.mutes.Mic) { toast("Ton micro est coupé", "Réactiver", function () { post("mute", {channel: "Mic", muted: false}).then(refresh); }); return; }
   var body = h("div");
   body.innerHTML = '<div class="ring soft"><div class="ico">' + svg("sparkles") + "</div></div><h2>Régler ma voix</h2>" +
-    "<p>Vingt secondes : je trouve ton micro, j\u2019écoute ta voix puis le silence de ta pièce. Ensuite je règle le gain, le noise gate et le compresseur pour toi.</p>" +
+    "<p>Vingt secondes : je trouve ton micro, j\u2019écoute ta voix puis le silence de ta pièce. Ensuite je règle le gain pour toi. Aucun traitement n\u2019est allumé : tu choisis ensuite ceux que tu veux.</p>" +
     '<div class="vs-tips">' + [["Mic", "Place-toi comme en live, à 10–15 cm du micro, face à lui."], ["Headphones", "Garde ton casque et le son du PC comme d\u2019habitude."], ["audioLines", "Parle à ton volume normal quand je te le demande."]]
       .map(function (t) { return "<div>" + svg(t[0]) + "<span>" + t[1] + "</span></div>"; }).join("") + "</div>";
   sheet({body: body, actions: [["Plus tard", null], ["Commencer", function () { startJob("voice-setup", {}); }, "primary"]]});
@@ -1996,13 +2038,15 @@ function showVoiceJob(j) {
 }
 function showVoiceResult(r) {
   if (!r.cal) { closeSheet(); return; }
-  var c = r.cal, preset = S.meta.mic_presets[r.preset];
+  var c = r.cal, preset = S.meta.mic_presets[r.preset], fx = r.fx || S.state.fx || {};
   var ratio = (r.comp.ratio_x >= 10 ? r.comp.ratio_x.toFixed(0) : r.comp.ratio_x.toFixed(1)).replace(".", ",") + ":1";
   var cells = [["Micro", MIC_TYPE_LONG[r.type] || r.type, ""], ["Gain", r.gain_db + " dB", "crêtes de ta voix vers \u221212 dB"],
     ["Ta voix", dbTxt(c.voice_db), "crêtes à " + dbTxt(c.voice_peak_db)], ["Bruit de la pièce", dbTxt(c.noise_peak_db), Math.round(r.snr_db) + " dB sous ta voix"],
-    ["Noise gate", dbTxt(r.gate.threshold), "baisse le bruit de " + Math.abs(r.gate.attenuation_db) + " dB"], ["Compresseur", dbTxt(r.comp.threshold), ratio + " · compensation +" + r.comp.makeup + " dB"]];
+    ["Noise gate", fx.gate ? dbTxt(r.gate.threshold) : "Coupé", (fx.gate ? "" : "prêt : ") + "seuil " + dbTxt(r.gate.threshold) + ", " + Math.abs(r.gate.attenuation_db) + " dB de moins"],
+    ["Compresseur", fx.comp ? dbTxt(r.comp.threshold) : "Coupé", (fx.comp ? "" : "prêt : ") + ratio + " · compensation +" + r.comp.makeup + " dB"]];
+  var anyFx = Object.keys(fx).some(function (k) { return fx[k]; });
   var body = h("div");
-  body.innerHTML = '<div class="diag-head">' + chipIco("ok", "#30D158") + "<div><h2>Ta voix est réglée</h2><p class=\"muted-txt\">Préréglage " + esc(frLabel(preset ? preset.label : r.preset)) + ", calé sur ta voix et ta pièce. Écoute-toi pour vérifier.</p></div></div>" +
+  body.innerHTML = '<div class="diag-head">' + chipIco("ok", "#30D158") + "<div><h2>Ta voix est réglée</h2><p class=\"muted-txt\">" + (anyFx ? "Préréglage " + esc(frLabel(preset ? preset.label : r.preset)) + ", calé sur ta voix et ta pièce." : "Gain calé sur ta voix. Aucun traitement allumé : ta voix reste naturelle, allume ceux que tu veux sur la page Micro.") + " Écoute-toi pour vérifier.</p></div></div>" +
     '<div class="diag-grid vs-grid">' + cells.map(function (x) { return "<div><small>" + x[0] + "</small><b>" + esc(x[1]) + "</b>" + (x[2] ? "<em>" + esc(x[2]) + "</em>" : "") + "</div>"; }).join("") + "</div>";
   var notes = h("div", {"class": "vs-notes"});
   (r.notes || []).forEach(function (n) {

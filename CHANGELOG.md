@@ -1,5 +1,23 @@
 # Nouveautés
 
+## 4.8.0
+
+**Nouveau**
+- Page Micro, « Traitements de ta voix » : égaliseur, noise gate, compresseur et de-esser ont chacun leur
+  interrupteur. Tous sont coupés par défaut : tu pars de ta voix naturelle et tu allumes ce que tu veux.
+  Un traitement coupé garde ses réglages, mais rien n'en part vers la GoXLR.
+- « M'entendre dans le casque » : le retour micro devient un interrupteur, coupé par défaut, avec son volume.
+- Nouveau préréglage « Naturel » (aucun traitement), proposé en premier ; l'ancien « Naturel » s'appelle « Léger ».
+
+**Corrigé**
+- Le noise gate des préréglages pouvait couper la voix dès qu'elle baissait un peu, au point qu'on ne
+  t'entendait plus. Il se place maintenant bien sous tes passages calmes et ne coupe plus net (24 dB au
+  plus, sauf Anti-bruit).
+- « Régler ma voix » cale le gain et prépare des réglages doux, sans plus allumer de traitement tout seul.
+- Les scènes intégrées ne changent plus ni les traitements de ta voix, ni le retour micro.
+- Après la mise à jour, les traitements et le retour micro sont coupés une fois : tu retrouves ta voix
+  naturelle et tu rallumes ce que tu veux.
+
 ## 4.7.0
 
 **Nouveau**
