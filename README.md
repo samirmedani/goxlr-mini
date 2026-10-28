@@ -16,6 +16,13 @@
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-64D2FF" alt="Windows 10 et 11">
 </p>
 
+> [!IMPORTANT]
+> **GoXLR Mini devient [Rustudio](https://github.com/samirmedani/rustudio)**, réécrit en Rust.
+> Depuis GoXLR Mini 4.x, clique « Mettre à jour » en bas à gauche : Rustudio s'installe à sa place et reprend
+> tes réglages. GoXLR Mini n'est retiré qu'une fois ta GoXLR reprise par Rustudio ; sinon, il revient tout seul.
+> Nouvelle installation : [Rustudio-Setup.exe](https://github.com/samirmedani/rustudio/releases/latest).
+> Ce dépôt ne reçoit plus que le passage vers Rustudio.
+
 <p align="center">
   <img src="docs/captures/mixer.jpg" width="880" alt="Mixeur de GoXLR Mini : quatre faders, musique coupée du stream seulement">
 </p>
