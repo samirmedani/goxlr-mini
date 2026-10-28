@@ -168,6 +168,20 @@ sealed class MainForm : Form
                 e.State = local && e.PermissionKind == CoreWebView2PermissionKind.Microphone
                     ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
             };
+            web.CoreWebView2.WebMessageReceived += (_, e) =>
+            {
+                // pont vers l'interface : peripheriques Windows par defaut (lus dans la session, invisibles du moteur)
+                if (!e.Source.StartsWith(Program.Url, StringComparison.OrdinalIgnoreCase)) return;
+                string? cmd = null;
+                try { using var d = JsonDocument.Parse(e.WebMessageAsJson); if (d.RootElement.TryGetProperty("cmd", out var c)) cmd = c.GetString(); } catch { }
+                if (cmd == "audio-defaults") PushAudio(force: true);
+                else if (cmd == "audio-defaults-fix")
+                {
+                    int n = -1;
+                    try { n = AudioDefaults.Fix(); } catch { }
+                    PushAudio(force: true, fixedCount: n);
+                }
+            };
             web.CoreWebView2.NavigationCompleted += async (_, e) =>
             {
                 if (!e.IsSuccess) { await Task.Delay(1500); await LoadUiAsync(); return; }
@@ -206,6 +220,22 @@ sealed class MainForm : Form
     {
         if (web.CoreWebView2 == null || !webReady) return;
         try { await web.CoreWebView2.ExecuteScriptAsync(js); } catch { }
+    }
+
+    /// Envoie a l'interface l'etat des peripheriques Windows par defaut, seulement s'il a change
+    /// (sauf demande explicite). Relu toutes les 4 s : un changement dans le panneau Son apparait vite.
+    string audioKey = "";
+    int audioTick;
+    void PushAudio(bool force, int? fixedCount = null)
+    {
+        if (web.CoreWebView2 == null) return;
+        Dictionary<string, object?> st;
+        try { st = AudioDefaults.Status(); } catch { return; }
+        var json = JsonSerializer.Serialize(st);
+        if (!force && json == audioKey) return;
+        audioKey = json;
+        if (fixedCount != null) { st["fixed"] = fixedCount; json = JsonSerializer.Serialize(st); }
+        try { web.CoreWebView2.PostWebMessageAsJson(json); } catch { }
     }
 
     public async void CaptureToFile()
@@ -257,6 +287,7 @@ sealed class MainForm : Form
                     : mic == "on" ? "GoXLR Mini · micro actif" : mic == "all" ? "GoXLR Mini · micro coupé" : "GoXLR Mini · micro " + MicLabel(mic));
             if (lastMic != null && mic != lastMic && connected && osdOn) ShowOsd(mic);
             if (connected) lastMic = mic;
+            if (webReady && ++audioTick % 4 == 0) PushAudio(force: false);
         }
         catch
         {

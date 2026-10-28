@@ -1,5 +1,16 @@
 # Nouveautés
 
+## 4.7.0
+
+**Nouveau**
+- Anti-écho Windows : l'appli surveille les périphériques son par défaut de Windows. Si Discord et tes jeux
+  enregistrent « Broadcast Stream Mix » (le mix du stream, qui contient déjà le son de tout le monde) au lieu de
+  ton micro, une alerte s'affiche avec « Corriger » : Windows reprend « Chat Mic » en un clic.
+- Même vérification pour la sortie : si le son du PC part ailleurs que sur la GoXLR, faders, mute et égaliseur
+  du casque ne s'y appliquent pas ; « Passer par la GoXLR » le remet sur « System » (et « Chat » pour les
+  communications). Un choix déjà fait sur une voie GoXLR (Jeu, Musique…) est gardé.
+- Le diagnostic affiche la sortie et le micro utilisés par Windows, et les ajoute au rapport copié.
+
 ## 4.6.0
 
 **Nouveau**

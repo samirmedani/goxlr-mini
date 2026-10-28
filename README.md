@@ -55,12 +55,19 @@ et reprend la GoXLR dès qu'elle est rebranchée.
   Appui long = coupé partout, le bouton clignote. Orange dans l'appli = coupé d'une sortie, rouge = partout.
 - **Égaliseur du casque** : correction de ton casque (AutoEq, cible Harman), styles et profils sur 10 bandes, appliqués
   par Equalizer APO aux voies GoXLR choisies ; coupé tout seul pendant le live.
+- **Anti-écho Windows** : l'appli vérifie en continu les périphériques son par défaut de Windows. Si Discord ou tes
+  jeux enregistrent « Broadcast Stream Mix » au lieu de ton micro, ou si le son du PC contourne la GoXLR, un clic
+  remet tout sur les bonnes voies.
 - **Faders physiques** suivis en direct ; un trait pointillé montre l'écart avec le volume réglé dans l'appli.
 - **Appli Windows** : interface claire qui suit la taille de la fenêtre, icône d'état (rouge = micro coupé), bulle
   à l'écran quand le micro change (jamais de focus, même en jeu), menu rapide dans la zone de notification.
 - **Incrustation OBS** : « Micro coupé » à l'écran du stream quand il ne t'entend plus
   (`http://127.0.0.1:14565/overlay`).
 - **Diagnostic** en direct : état de la connexion, commandes, reconnexions, journal ; bouton « Reconnecter ».
+
+<p align="center">
+  <img src="docs/captures/casque.jpg" width="720" alt="Page Casque : égaliseur, correction du casque et styles">
+</p>
 
 <p align="center">
   <img src="docs/captures/overlay.jpg" width="380" alt="Incrustation OBS : micro coupé">
@@ -74,13 +81,15 @@ et reprend la GoXLR dès qu'elle est rebranchée.
 
 1. Page **Micro › Régler ma voix** : parle une dizaine de secondes, puis tais-toi quelques secondes. Écoute le
    résultat avec **M'écouter** : 8 secondes enregistrées, puis rejouées telles que les entend Discord.
-2. **Discord** : micro « Chat Mic », sortie « Chat ». Coupe la suppression de bruit, l'annulation d'écho et le
+2. **Windows** : micro par défaut « Chat Mic », sortie « System ». L'appli le vérifie et le corrige en un clic
+   (conseil dans Scènes).
+3. **Discord** : micro « Chat Mic », sortie « Chat ». Coupe la suppression de bruit, l'annulation d'écho et le
    réglage automatique du gain de Discord : la GoXLR s'en charge déjà.
-3. **OBS** : une seule source audio, « Broadcast Stream Mix » ; « Audio du bureau » désactivé. Ce qui part en
+4. **OBS** : une seule source audio, « Broadcast Stream Mix » ; « Audio du bureau » désactivé. Ce qui part en
    live se choisit dans la page Routage.
-4. Branche la GoXLR **toujours sur le même port USB** : sur un autre port, Windows crée de nouveaux périphériques
+5. Branche la GoXLR **toujours sur le même port USB** : sur un autre port, Windows crée de nouveaux périphériques
    audio, et Discord ou OBS ne retrouvent plus les leurs.
-5. Casque ouvert et micro statique : garde le retour micro bas, et pas d'enceintes pendant les vocaux.
+6. Casque ouvert et micro statique : garde le retour micro bas, et pas d'enceintes pendant les vocaux.
 
 ## Installer
 

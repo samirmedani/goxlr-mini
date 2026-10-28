@@ -1702,6 +1702,7 @@ function advices() {
   if (L && L.live.mic_db <= -72 && !s.mutes.Mic) a.push({lvl: "warn", t: "Aucun son du micro", d: s.mic.type === "condenser" ? "Vérifie le câble XLR, puis lance « Régler ma voix »." : "Un micro statique ne marche qu\u2019avec le 48 V : « Régler ma voix » le détecte et l\u2019allume.", label: "Régler ma voix", fn: voice});
   else if (!micCal()) a.push({t: "Ta voix n\u2019est pas encore réglée", d: "20 secondes pour caler le gain, le noise gate et le compresseur sur ta voix et ta pièce.", label: "Régler ma voix", fn: voice});
   if (s.routing.Chat.ChatMic) a.push({lvl: "warn", t: "Écho dans Discord", d: "Le chat est renvoyé vers le chat : tes amis s\u2019entendent eux-mêmes.", label: "Corriger", fn: function () { return post("route", {input: "Chat", output: "ChatMic", enabled: false}); }});
+  winAdvice(a);
   if (s.routing.System.BroadcastMix) a.push({t: "Tes notifications passent en live", d: "Les sons Windows sont envoyés au stream.", label: "Les retirer", fn: function () { return post("route", {input: "System", output: "BroadcastMix", enabled: false}); }});
   if (s.mic.type === "dynamic" && s.mic.gain_db < 40 && !micCal()) a.push({t: "Gain bas pour un micro dynamique", d: "Il est à " + s.mic.gain_db + " dB ; un micro dynamique demande souvent 45 à 60 dB.", label: "Régler ma voix", fn: voice});
   if (s.routing.Microphone.Headphones && s.volumes.MicMonitor > 64) a.push({t: "Tu t\u2019entends dans le casque", d: "Retour micro à " + pct(s.volumes.MicMonitor) + " %. Pratique pour se contrôler, gênant sinon.", label: "Couper le retour", fn: function () { return post("volume", {channel: "MicMonitor", value: 0}); }});
@@ -1713,6 +1714,7 @@ function advices() {
   return a;
 }
 function renderAdvice() {
+  if (!S) return;
   var a = advices(), key = JSON.stringify(a.map(function (x) { return x.t + x.d; }));
   var warn = a.filter(function (x) { return x.lvl !== "ok"; }).length;
   var badge = $("nav-badge"); badge.textContent = warn; badge.style.display = warn ? "" : "none";
@@ -1726,6 +1728,51 @@ function renderAdvice() {
     it.appendChild(body); sc.adv.appendChild(it);
   });
   sc.advKey = key;
+}
+
+/* ---------- périphériques Windows par défaut (via l'appli, qui tourne dans la session) ---------- */
+var WIN = null, winLoopTold = false, winWait = null;
+function winBridge() { return window.chrome && window.chrome.webview ? window.chrome.webview : null; }
+function winByKind() {
+  var k = {};
+  if (WIN && WIN.goxlr) (WIN.issues || []).forEach(function (i) { (k[i.kind] = k[i.kind] || []).push(i); });
+  return k;
+}
+function winName(list) { var n = list && list[0] && list[0].name; return n ? "« " + esc(n) + " »" : ""; }
+function winFix() {
+  var b = winBridge(); if (!b) return Promise.resolve();
+  return new Promise(function (ok) {
+    var t = setTimeout(function () { winWait = null; toast("L\u2019appli n\u2019a pas répondu"); ok(); }, 5000);
+    winWait = function () { clearTimeout(t); winWait = null; ok(); };
+    b.postMessage({cmd: "audio-defaults-fix"});
+  });
+}
+function winAdvice(a) {
+  var k = winByKind(), fix = function () { return winFix(); };
+  if (k["capture-loop"]) a.push({lvl: "warn", t: "Écho : Windows n\u2019écoute pas ton micro", d: "Discord et tes jeux enregistrent " + winName(k["capture-loop"]) + ", qui contient déjà le son de tout le monde : tes amis s\u2019entendent. Ton micro, c\u2019est « Chat Mic ».", label: "Corriger", fn: fix});
+  else if (k["capture-other"]) a.push({lvl: "warn", t: "Windows utilise un autre micro", d: "Discord et tes jeux prennent " + winName(k["capture-other"]) + " au lieu de ton micro XLR (« Chat Mic ») : ni le traitement de ta voix, ni le bouton de toux ne s\u2019y appliquent.", label: "Utiliser Chat Mic", fn: fix});
+  else if (k["capture-none"]) a.push({lvl: "warn", t: "Aucun micro par défaut dans Windows", d: "Les applis qui suivent le micro par défaut ne t\u2019entendent pas.", label: "Utiliser Chat Mic", fn: fix});
+  var out = k["render-other"] || k["render-none"];
+  if (out) a.push({t: "Le son du PC contourne la GoXLR", d: (winName(out) ? "Windows joue le son sur " + winName(out) : "Windows n\u2019a pas de sortie par défaut") + " : faders, mute et égaliseur du casque ne s\u2019y appliquent pas.", label: "Passer par la GoXLR", fn: fix});
+}
+function onWinAudio(d) {
+  WIN = d;
+  if (d.fixed != null) {
+    toast(d.fixed > 0 ? "Windows utilise maintenant ta GoXLR" : d.fixed === 0 ? "Windows utilisait déjà ta GoXLR" : "Windows ne voit pas encore les voies de la GoXLR");
+    if (winWait) winWait();
+  }
+  var k = winByKind();
+  if (k["capture-loop"] && !winLoopTold && d.fixed == null) {
+    winLoopTold = true;
+    toast("Écho : Windows enregistre « " + (k["capture-loop"][0].name || "le mix") + " » au lieu de ton micro", "Corriger", winFix);
+  }
+  if (!k["capture-loop"]) winLoopTold = false;
+  renderAdvice();
+}
+function winInit() {
+  var b = winBridge(); if (!b) return;
+  b.addEventListener("message", function (e) { if (e.data && e.data.type === "audio-defaults") onWinAudio(e.data); });
+  b.postMessage({cmd: "audio-defaults"});
 }
 
 /* ---------- menu bas droite ---------- */
@@ -1774,12 +1821,13 @@ function openDiag() {
       var cells = [["Appareil", hl.connected ? "Connectée" : hl.present === false ? "Absente" : "Hors ligne"], ["Firmware", hl.firmware || "—"], ["Connectée depuis", fmtDur(hl.device_uptime_s)], ["Moteur lancé depuis", fmtDur(hl.engine_uptime_s)],
         ["Commandes", (s.commands || 0).toLocaleString("fr-FR")], ["Index actuel", hl.command_index + " / 65535"], ["Remises à zéro", s.index_resets || 0], ["Resynchros", s.resyncs || 0],
         ["Reconnexions", hl.reconnects], ["Relances moteur", hl.engine_restarts], ["Boucle USB", hl.loop_age_ms + " ms"], ["En attente", hl.pending]];
+      if (WIN) cells.push(["Sortie Windows", WIN.render.console.name || "—"], ["Micro Windows", WIN.capture.console.name || "—"]);
       var why = !hl.connected && USB_TXT[hl.usb] && hl.usb !== "mini" ? USB_TXT[hl.usb] : hl.last_error && !hl.connected ? hl.last_error : "";
       body.innerHTML = '<div class="diag-head">' + chipIco(st[2], st[1]) + "<div><h2>" + st[0] + "</h2><p class=\"muted-txt\">Moteur v" + hl.version + (hl.simulated ? " · appareil simulé" : "") + (hl.supervised ? " · surveillé par son superviseur" : "") + (why ? " · " + esc(why) : "") + "</p></div></div>" +
         '<div class="diag-grid">' + cells.map(function (c) { return "<div><small>" + c[0] + "</small><b>" + esc(c[1]) + "</b></div>"; }).join("") + "</div>" +
         '<div class="diag-log">' + esc((hl.log || []).slice(-14).join("\n")) + "</div>";
       if (hl.simulated) body.appendChild(simTools());
-      sheetState.report = hl;
+      sheetState.report = WIN ? Object.assign({}, hl, {windows_audio: WIN}) : hl;
     }).catch(function () { body.innerHTML = "<h2>Le moteur ne répond pas</h2><p class=\"muted-txt\">Il est relancé automatiquement par son superviseur.</p>"; });
   }
   paint();
@@ -2303,6 +2351,7 @@ function init() {
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closePop(); if (sheetState && !sheetState.job) closeSheet(); } });
   document.addEventListener("contextmenu", function (e) { if (e.target.tagName !== "INPUT") e.preventDefault(); });
   refresh().then(function () { go(location.hash.slice(1) || "mixer"); });
+  winInit();
   liveLoop();
   requestAnimationFrame(frame);
 }

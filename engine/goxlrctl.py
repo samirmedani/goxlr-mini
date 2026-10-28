@@ -71,7 +71,7 @@ import zipfile
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "4.6.0"
+VERSION = "4.7.0"
 APP_NAME = "GoXLR Mini"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
